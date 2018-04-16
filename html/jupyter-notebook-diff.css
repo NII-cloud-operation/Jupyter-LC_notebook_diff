@@ -1,0 +1,109 @@
+.jupyter-notebook-diff > .wrapper {
+    display: table;
+	table-layout: fixed;
+	width: 100%;
+	box-sizing: border-box;
+	border-collapse: collapse;
+	font-family: Consolas, 'Courier New', Courier, Monaco, monospace;
+	font-size: 11px;
+}
+.jupyter-notebook-diff > .wrapper > .notebook {
+    display: table-cell;
+	vertical-align: top;
+	position: relative;
+}
+.jupyter-notebook-diff > .wrapper > .relation {
+    display: table-cell;
+	vertical-align: top;
+	width: 50px;
+}
+.jupyter-notebook-diff > .wrapper > .notebook:nth-child(1) > .title,
+.jupyter-notebook-diff > .wrapper > .notebook:nth-child(1) > .cell > .meme {
+	background-color: #ebebff;
+}
+.jupyter-notebook-diff > .wrapper > .notebook:nth-child(3) > .title,
+.jupyter-notebook-diff > .wrapper > .notebook:nth-child(3) > .cell > .meme {
+	background-color: #d8ffd8;
+}
+.jupyter-notebook-diff > .wrapper > .notebook:nth-child(5) > .title,
+.jupyter-notebook-diff > .wrapper > .notebook:nth-child(5) > .cell > .meme {
+	background-color: #ffffdc;
+}
+.jupyter-notebook-diff > .wrapper > .notebook > .title {
+	margin: 0 0px 2px 0px;
+	padding: 5px;
+}
+.jupyter-notebook-diff > .wrapper > .notebook > .cell {
+}
+.jupyter-notebook-diff > .wrapper > .notebook > .cell > .meme {
+	margin: 5px 0px 0 0px;
+	padding: 5px;
+	border: 1px solid #ddd;
+	border-radius: 3px 3px 0 0;
+}
+.jupyter-notebook-diff > .wrapper > .notebook > .cell > .source {
+	margin: -1px 0px 5px 0px;
+	padding: 5px;
+	border: 1px solid #ddd;
+	border-radius: 0 0 3px 3px;
+	overflow-x: scroll;
+	overflow-y: hidden;
+}
+.jupyter-notebook-diff > .wrapper > .notebook > .cell > .meme > .open-button,
+.jupyter-notebook-diff > .wrapper > .notebook > .cell > .meme > .close-button,
+.jupyter-notebook-diff > .wrapper > .notebook > .cell > .meme > .select-button {
+	display: none;
+	background-color: #fff;
+	border: 1px solid #ccc;
+	color: #ccc;
+	text-align: center;
+	width: 12px;
+	margin-right: 5px;
+	cursor: pointer;
+}
+.jupyter-notebook-diff > .wrapper > .notebook > .cell > .meme > .select-button {
+	display: inline-block;
+	float: right;
+	color: red;
+}
+.jupyter-notebook-diff > .wrapper > .notebook > .cell > .meme > .select-button.marked {
+	border: 2px solid #f00;
+}
+.jupyter-notebook-diff > .wrapper > .notebook > .cell > .meme > .select-button > span {
+	display: none;
+}
+.jupyter-notebook-diff > .wrapper > .notebook > .cell > .meme > .select-button.selected > span {
+	display: inline;
+}
+.jupyter-notebook-diff > .wrapper > .notebook > .cell > .meme > .close-button {
+	display: inline-block;
+}
+.jupyter-notebook-diff > .wrapper > .notebook > .cell.closed > .meme > .open-button {
+	display: inline-block;
+}
+.jupyter-notebook-diff > .wrapper > .notebook > .cell.closed > .meme > .close-button {
+	display: none;
+}
+.jupyter-notebook-diff > .wrapper > .notebook > .cell.closed > .source {
+	max-height: 100px;
+}
+.jupyter-notebook-diff > .wrapper > .notebook > .cell.highlight > .source {
+	background-color: #ffffee;
+}
+.jupyter-notebook-diff > .dark {
+	display: none;
+	position: fixed;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	background-color: #000;
+	opacity: 0.5;
+}
+.jupyter-notebook-diff > .merge-view {
+	display: none;
+	position: fixed;
+	top: 10%;
+	left: 5%;
+	width: 90%;
+}
