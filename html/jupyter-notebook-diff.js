@@ -132,30 +132,29 @@ var JupyterNotebook;
 var JupyterNotebook;
 (function (JupyterNotebook) {
     var DiffView = (function () {
-        function DiffView(rootSelector, filenames) {
+        function DiffView(rootSelector, filenames, filelists) {
             this.rootSelector = rootSelector;
             this.$container = $(this.rootSelector);
             this.$mergeView = $('<div class="merge-view"></div>');
             this.loadingFilenames = filenames;
+            this.loadingFilelists = filelists;
             this.notebooks = [];
             this.relations = [];
             this.loadNext();
         }
         DiffView.prototype.loadNext = function () {
-            var _this = this;
             if (this.loadingFilenames.length == 0) {
                 this.render();
             }
             else {
-                var filename_1 = this.loadingFilenames.shift();
-                $.getJSON(filename_1, function (data) {
-                    _this.notebooks.push(new JupyterNotebook.Notebook(filename_1, data));
-                    if (_this.notebooks.length >= 2) {
-                        var i = _this.notebooks.length - 2;
-                        _this.relations.push(new JupyterNotebook.Relation(_this.notebooks[i], _this.notebooks[i + 1]));
-                    }
-                    _this.loadNext();
-                });
+                var filename = this.loadingFilenames.shift();
+                var data = this.loadingFilelists.shift();
+                this.notebooks.push(new JupyterNotebook.Notebook(filename, data));
+                if (this.notebooks.length >= 2) {
+                    var i = this.notebooks.length - 2;
+                    this.relations.push(new JupyterNotebook.Relation(this.notebooks[i], this.notebooks[i + 1]));
+                }
+                this.loadNext();
             }
         };
         DiffView.prototype.getCellDom = function (notebookMeme, cellMeme) {
