@@ -107,3 +107,7 @@
 	left: 5%;
 	width: 90%;
 }
+
+.jupyter-notebook-diff .merge-view .CodeMirror-merge-pane {
+  background-color: white;
+}
