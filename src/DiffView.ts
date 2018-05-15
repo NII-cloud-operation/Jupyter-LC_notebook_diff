@@ -14,6 +14,9 @@ namespace JupyterNotebook {
 		/** ファイル名の配列 */
 		loadingFilenames: string[];
 
+		/** ファイルデータの配列 */
+		loadingFilelists: string[];
+
 		/** ロードされたノートブック */
 		notebooks: Notebook[];
 
@@ -21,11 +24,12 @@ namespace JupyterNotebook {
 		relations: Relation[];
 
 		/** 初期化 */
-		constructor(rootSelector: string, filenames: string[]) {
+		constructor(rootSelector: string, filenames: string[], filelists: string[]) {
 			this.rootSelector = rootSelector;
 			this.$container = $(this.rootSelector);
 			this.$mergeView = $('<div class="merge-view"></div>');
 			this.loadingFilenames = filenames;
+			this.loadingFilelists = filelists;
 			this.notebooks = [];
 			this.relations = [];
 			this.loadNext();
@@ -39,14 +43,13 @@ namespace JupyterNotebook {
 			} else {
 				// ロード
 				let filename = this.loadingFilenames.shift() as string;
-				$.getJSON(filename, data => {
-					this.notebooks.push(new Notebook(filename, data));
-					if (this.notebooks.length >= 2) {
-						let i = this.notebooks.length - 2;
-						this.relations.push(new Relation(this.notebooks[i], this.notebooks[i + 1]));
-					}
-					this.loadNext();
-				});
+				var data = this.loadingFilelists.shift() as string;
+				this.notebooks.push(new Notebook(filename, data));
+				if (this.notebooks.length >= 2) {
+					let i = this.notebooks.length - 2;
+					this.relations.push(new Relation(this.notebooks[i], this.notebooks[i + 1]));
+				}
+				this.loadNext();
 			}
 		}
 
