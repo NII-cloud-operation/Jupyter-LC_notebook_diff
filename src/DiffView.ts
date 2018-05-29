@@ -1,6 +1,10 @@
 /// <reference path="../typings/index.d.ts" />
 declare var CodeMirror: any;
+declare var define:any;
+define(JupyterNotebook);
+
 namespace JupyterNotebook {
+
 	export class DiffView {
 		/** セレクタ */
 		rootSelector: string;
@@ -15,7 +19,7 @@ namespace JupyterNotebook {
 		loadingFilenames: string[];
 
 		/** ファイルデータの配列 */
-		loadingFilelists: string[];
+		loadingFilecontents: string[];
 
 		/** ロードされたノートブック */
 		notebooks: Notebook[];
@@ -24,12 +28,12 @@ namespace JupyterNotebook {
 		relations: Relation[];
 
 		/** 初期化 */
-		constructor(rootSelector: string, filenames: string[], filelists: string[]) {
+		constructor(rootSelector: string, filenames: string[], filecontents: string[]) {
 			this.rootSelector = rootSelector;
 			this.$container = $(this.rootSelector);
 			this.$mergeView = $('<div class="merge-view"></div>');
 			this.loadingFilenames = filenames;
-			this.loadingFilelists = filelists;
+			this.loadingFilecontents = filecontents;
 			this.notebooks = [];
 			this.relations = [];
 			this.loadNext();
@@ -43,13 +47,26 @@ namespace JupyterNotebook {
 			} else {
 				// ロード
 				let filename = this.loadingFilenames.shift() as string;
-				var data = this.loadingFilelists.shift() as string;
-				this.notebooks.push(new Notebook(filename, data));
-				if (this.notebooks.length >= 2) {
-					let i = this.notebooks.length - 2;
-					this.relations.push(new Relation(this.notebooks[i], this.notebooks[i + 1]));
+				if (this.loadingFilecontents.length == 0) {
+					$.getJSON(filename, data => {
+					        this.notebooks.push(new Notebook(filename, data));
+									if (this.notebooks.length >= 2) {
+										let i = this.notebooks.length - 2;
+										this.relations.push(new Relation(this.notebooks[i],
+											                               this.notebooks[i + 1]));
+									}
+									this.loadNext();
+					});
+				} else {
+					var data = this.loadingFilecontents.shift() as string;
+					this.notebooks.push(new Notebook(filename, data));
+					if (this.notebooks.length >= 2) {
+						let i = this.notebooks.length - 2;
+						this.relations.push(new Relation(this.notebooks[i],
+							                               this.notebooks[i + 1]));
+					}
+					this.loadNext();
 				}
-				this.loadNext();
 			}
 		}
 
