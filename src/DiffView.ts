@@ -1,5 +1,4 @@
 /// <reference path="../typings/index.d.ts" />
-declare var CodeMirror: any;
 declare var define:any;
 define(JupyterNotebook);
 
@@ -8,6 +7,8 @@ namespace JupyterNotebook {
 	export class DiffView {
 		/** セレクタ */
 		rootSelector: string;
+
+		codeMirror: any;
 
 		/** コンテナ */
 		$container: JQuery;
@@ -28,8 +29,10 @@ namespace JupyterNotebook {
 		relations: Relation[];
 
 		/** 初期化 */
-		constructor(rootSelector: string, filenames: string[], filecontents: string[]) {
+		constructor(rootSelector: string, codeMirror: any, filenames: string[],
+			          filecontents: string[]) {
 			this.rootSelector = rootSelector;
+			this.codeMirror = codeMirror;
 			this.$container = $(this.rootSelector);
 			this.$mergeView = $('<div class="merge-view"></div>');
 			this.loadingFilenames = filenames;
@@ -115,7 +118,7 @@ namespace JupyterNotebook {
 			};
 			this.$mergeView.show();
 			this.$container.find('.dark').show();
-			CodeMirror.MergeView(mergeViewElem, options);
+			this.codeMirror.MergeView(mergeViewElem, options);
 		}
 
 		/** マージビューを閉じる */

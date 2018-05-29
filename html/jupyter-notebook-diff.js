@@ -133,8 +133,9 @@ define(JupyterNotebook);
 var JupyterNotebook;
 (function (JupyterNotebook) {
     var DiffView = (function () {
-        function DiffView(rootSelector, filenames, filecontents) {
+        function DiffView(rootSelector, codeMirror, filenames, filecontents) {
             this.rootSelector = rootSelector;
+            this.codeMirror = codeMirror;
             this.$container = $(this.rootSelector);
             this.$mergeView = $('<div class="merge-view"></div>');
             this.loadingFilenames = filenames;
@@ -204,7 +205,7 @@ var JupyterNotebook;
             };
             this.$mergeView.show();
             this.$container.find('.dark').show();
-            CodeMirror.MergeView(mergeViewElem, options);
+            this.codeMirror.MergeView(mergeViewElem, options);
         };
         DiffView.prototype.hideMergeView = function () {
             this.$mergeView.empty();

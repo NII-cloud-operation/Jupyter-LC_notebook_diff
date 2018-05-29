@@ -1,14 +1,26 @@
+requirejs.config({
+  paths: {
+    diff_match_patch: '/custom/diff_match_patch'
+  }
+});
+
 define([
   'jquery',
   'base/js/namespace',
   'base/js/utils',
   'require',
+  'diff_match_patch',
+  'codemirror/lib/codemirror',
+  'codemirror/addon/merge/merge',
   './jupyter-notebook-diff'
 ], function(
   $,
   Jupyter,
   utils,
   require,
+  DiffMatchPatch,
+  CodeMirror,
+  Merge,
   JupyterDiff
 ) {
     "use strict";
@@ -83,7 +95,7 @@ define([
             filenames.push(base_url + 'files/' + filename);
           }
           console.log(filenames);
-          new JupyterDiff.DiffView($('#diff-content'), filenames, []);
+          new JupyterDiff.DiffView($('#diff-content'), CodeMirror, filenames, []);
         });
 
         // select tab if hash is set appropriately
@@ -98,6 +110,16 @@ define([
             .attr('rel', 'stylesheet')
             .attr('type', 'text/css')
             .attr('href', require.toUrl('./main.css'))
+            .appendTo('head');
+        $('<link>')
+            .attr('rel', 'stylesheet')
+            .attr('type', 'text/css')
+            .attr('href', require.toUrl('codemirror/lib/codemirror.css'))
+            .appendTo('head');
+        $('<link>')
+            .attr('rel', 'stylesheet')
+            .attr('type', 'text/css')
+            .attr('href', require.toUrl('codemirror/addon/merge/merge.css'))
             .appendTo('head');
         $('<link>')
             .attr('rel', 'stylesheet')
