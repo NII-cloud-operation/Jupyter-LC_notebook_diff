@@ -1,0 +1,15 @@
+#diff-content {
+  margin: 1em;
+}
+
+.diff-content-panel {
+  margin: 1em;
+}
+
+.diff-content-panel .list-group {
+  margin: 1em;
+}
+
+#diff-content .title {
+  font-weight: bold;
+}
