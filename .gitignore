@@ -1,2 +1,5 @@
 .DS_Store
 nbextension/lc_notebook_diff/nbextension/jupyter-notebook-diff.*
+build
+dist
+*.egg-info
