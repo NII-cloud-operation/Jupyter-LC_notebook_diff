@@ -58,8 +58,7 @@ define([
                        .addClass('btn btn-primary col-xs-10')
                        .text('Show diff')));
       main.append($('<div></div>')
-                    .attr('id', 'diff-content')
-                    .addClass('jupyter-notebook-diff'));
+                    .attr('id', 'diff-content-container'));
 
       return $('<div></div>')
                 .append(error)
@@ -98,7 +97,7 @@ define([
             .append(tab_link)
             .appendTo('#tabs');
         $('#diff-search').click(function() {
-          $('#diff-content').empty();
+          $('#diff-content-container').empty();
           var filenames = [];
           for(var i = 0; i < 3; i ++) {
             var filename = $('#diff-file' + i).val();
@@ -111,6 +110,10 @@ define([
             showError('Two or more filenames required');
           }else{
             hideError();
+            $('<div></div>')
+              .attr('id', 'diff-content')
+              .addClass('jupyter-notebook-diff')
+              .appendTo($('#diff-content-container'));
             new JupyterDiff.DiffView($('#diff-content'), CodeMirror, filenames, []);
           }
         });
