@@ -66,6 +66,16 @@ define([
                 .append(main);
     }
 
+    function showError(message) {
+      $('#notebook_diff_error').append($('<div></div>')
+                                         .addClass('alert alert-danger')
+                                         .text(message));
+    }
+
+    function hideError() {
+      $('#notebook_diff_error').empty();
+    }
+
     function insertTab () {
         var tab_text = 'Diff';
         var tab_id = 'notebook_diff';
@@ -92,10 +102,17 @@ define([
           var filenames = [];
           for(var i = 0; i < 3; i ++) {
             var filename = $('#diff-file' + i).val();
-            filenames.push(base_url + 'files/' + filename);
+            if(filename.trim().length > 0) {
+              filenames.push(base_url + 'files/' + filename);
+            }
           }
           console.log(filenames);
-          new JupyterDiff.DiffView($('#diff-content'), CodeMirror, filenames, []);
+          if(filenames.length < 2) {
+            showError('Two or more filenames required');
+          }else{
+            hideError();
+            new JupyterDiff.DiffView($('#diff-content'), CodeMirror, filenames, []);
+          }
         });
 
         // select tab if hash is set appropriately
