@@ -191,12 +191,28 @@ var JupyterNotebook;
                 relation.update();
             }
         };
+        DiffView.prototype.getSourceByMeme = function (meme, notebook) {
+            if (notebook == null) {
+                return null;
+            }
+            else {
+                var cell = notebook.getCellByMeme(meme);
+                return cell == null ? null : cell.sourceAll;
+            }
+        };
         DiffView.prototype.showMergeView = function (meme) {
             var mergeViewElem = this.$mergeView[0];
+            var notebooks = [];
+            if (this.notebooks.length == 2) {
+                notebooks = [null, this.notebooks[0], this.notebooks[1]];
+            }
+            else {
+                notebooks = this.notebooks;
+            }
             var options = {
-                value: this.notebooks[2].getCellByMeme(meme).sourceAll,
-                origLeft: this.notebooks[0].getCellByMeme(meme).sourceAll,
-                origRight: this.notebooks[1].getCellByMeme(meme).sourceAll,
+                value: this.getSourceByMeme(meme, notebooks[1]),
+                origLeft: this.getSourceByMeme(meme, notebooks[0]),
+                origRight: this.getSourceByMeme(meme, notebooks[2]),
                 lineNumbers: true,
                 mode: "text/html",
                 highlightDifferences: true,

@@ -13,3 +13,7 @@
 #diff-content .title {
   font-weight: bold;
 }
+
+#notebook_diff_error .alert {
+  margin: 1em;
+}
