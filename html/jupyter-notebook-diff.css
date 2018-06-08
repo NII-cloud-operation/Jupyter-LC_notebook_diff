@@ -103,9 +103,13 @@
 .jupyter-notebook-diff > .merge-view {
 	display: none;
 	position: fixed;
-	top: 30%;
-	left: 20%;
-	width: 60%;
+	top: 10%;
+	left: 10%;
+	width: 80%;
+}
+
+.CodeMirror-merge, .CodeMirror-merge .CodeMirror {
+  height: 600px;
 }
 
 .jupyter-notebook-diff .merge-view .CodeMirror-merge-pane {
