@@ -270,6 +270,14 @@ namespace JupyterNotebook {
 			this.$container.on('click', '.dark', (e) => {
 				this.hideMergeView();
 			});
+			if (this.notebooks.length == 2) {
+				this.notebooks[0].updateStyle([], [this.notebooks[1]]);
+				this.notebooks[1].updateStyle([this.notebooks[0]], []);
+			} else {
+				this.notebooks[0].updateStyle([], this.notebooks.slice(1));
+				this.notebooks[1].updateStyle([this.notebooks[0]], [this.notebooks[2]]);
+				this.notebooks[2].updateStyle(this.notebooks.slice(0, 2), []);
+			}
 
 			setInterval(() => {
 				this.updateRelations();

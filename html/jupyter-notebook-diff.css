@@ -90,6 +90,18 @@
 .jupyter-notebook-diff > .wrapper > .notebook > .cell.highlight > .source {
 	background-color: #ffffee;
 }
+.jupyter-notebook-diff > .wrapper > .notebook > .cell.changed1 > .source {
+	background-color: #ffffcc;
+}
+.jupyter-notebook-diff > .wrapper > .notebook > .cell.changed1.highlight > .source {
+	background-color: #ffff33;
+}
+.jupyter-notebook-diff > .wrapper > .notebook > .cell.changed2 > .source {
+	background-color: #ffd699;
+}
+.jupyter-notebook-diff > .wrapper > .notebook > .cell.changed2.highlight > .source {
+	background-color: #ff9900;
+}
 .jupyter-notebook-diff > .dark {
 	display: none;
 	position: fixed;
@@ -103,9 +115,13 @@
 .jupyter-notebook-diff > .merge-view {
 	display: none;
 	position: fixed;
-	top: 30%;
-	left: 20%;
-	width: 60%;
+	top: 10%;
+	left: 10%;
+	width: 80%;
+}
+
+.CodeMirror-merge, .CodeMirror-merge .CodeMirror {
+  height: 600px;
 }
 
 .jupyter-notebook-diff .merge-view .CodeMirror-merge-pane {
