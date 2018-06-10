@@ -19,13 +19,70 @@ var JupyterNotebook;
             html += '<div class="meme">';
             html += '<span class="open-button">+</span><span class="close-button">-</span>';
             html += '<span class="select-button">&nbsp;</span>';
-            var memeTokens = this.meme.split('-');
-            html += '<b>' + memeTokens.shift() + '</b>-' + memeTokens.join('-');
+            if (this.hasMeme) {
+                var memeTokens = this.meme.split('-');
+                html += '<b>' + memeTokens.shift() + '</b>-' + memeTokens.join('-');
+            }
             html += '</div>';
             html += '<div class="source">' + this.sourceEscaped + '</div>';
             html += '</div>';
             return html;
         };
+        Cell.prototype.updateStyle = function (left, right) {
+            if (!this.hasMeme || left.length == 0) {
+                this.$view.removeClass("changed1");
+                this.$view.removeClass("changed2");
+            }
+            else if (left.length == 1) {
+                if (this.checkChanged([this], left[0].getCellsByMeme(this.meme))) {
+                    this.$view.addClass("changed1");
+                    this.$view.removeClass("changed2");
+                }
+                else {
+                    this.$view.removeClass("changed1");
+                    this.$view.removeClass("changed2");
+                }
+            }
+            else {
+                var ch0 = this.checkChanged([this], left[0].getCellsByMeme(this.meme));
+                var ch1 = this.checkChanged([this], left[1].getCellsByMeme(this.meme));
+                var ch01 = this.checkChanged(left[0].getCellsByMeme(this.meme), left[1].getCellsByMeme(this.meme));
+                if (ch01) {
+                    if (ch0 == false) {
+                        this.$view.removeClass("changed1");
+                        this.$view.removeClass("changed2");
+                    }
+                    else if (ch1 == false) {
+                        this.$view.addClass("changed1");
+                        this.$view.removeClass("changed2");
+                    }
+                    else {
+                        this.$view.removeClass("changed1");
+                        this.$view.addClass("changed2");
+                    }
+                }
+                else {
+                    if (ch0 || ch1) {
+                        this.$view.addClass("changed1");
+                        this.$view.removeClass("changed2");
+                    }
+                    else {
+                        this.$view.removeClass("changed1");
+                        this.$view.removeClass("changed2");
+                    }
+                }
+            }
+        };
+        Object.defineProperty(Cell.prototype, "hasMeme", {
+            get: function () {
+                if (this.metaData["lc_cell_meme"] === undefined) {
+                    return false;
+                }
+                return this.metaData["lc_cell_meme"]["current"] !== undefined;
+            },
+            enumerable: true,
+            configurable: true
+        });
         Object.defineProperty(Cell.prototype, "meme", {
             get: function () {
                 return this.metaData["lc_cell_meme"]["current"];
@@ -123,6 +180,18 @@ var JupyterNotebook;
                     $selectButton.removeClass('marked');
                 }
             }
+        };
+        Cell.prototype.checkChanged = function (bases, cells) {
+            for (var _i = 0, bases_1 = bases; _i < bases_1.length; _i++) {
+                var base = bases_1[_i];
+                for (var _a = 0, cells_1 = cells; _a < cells_1.length; _a++) {
+                    var target = cells_1[_a];
+                    if (target.source.join("\n") != base.source.join("\n")) {
+                        return true;
+                    }
+                }
+            }
+            return false;
         };
         Cell.idCounter = 0;
         return Cell;
@@ -337,6 +406,15 @@ var JupyterNotebook;
             this.$container.on('click', '.dark', function (e) {
                 _this.hideMergeView();
             });
+            if (this.notebooks.length == 2) {
+                this.notebooks[0].updateStyle([], [this.notebooks[1]]);
+                this.notebooks[1].updateStyle([this.notebooks[0]], []);
+            }
+            else {
+                this.notebooks[0].updateStyle([], this.notebooks.slice(1));
+                this.notebooks[1].updateStyle([this.notebooks[0]], [this.notebooks[2]]);
+                this.notebooks[2].updateStyle(this.notebooks.slice(0, 2), []);
+            }
             setInterval(function () {
                 _this.updateRelations();
             });
@@ -374,6 +452,12 @@ var JupyterNotebook;
             html += '<div class="title">' + this.filename + '</div>';
             html += '</div>';
             return html;
+        };
+        Notebook.prototype.updateStyle = function (left, right) {
+            for (var _i = 0, _a = this.cellList; _i < _a.length; _i++) {
+                var cell = _a[_i];
+                cell.updateStyle(left, right);
+            }
         };
         Notebook.prototype.getCellsByMeme = function (meme) {
             var cells = this.cellMap[meme];
