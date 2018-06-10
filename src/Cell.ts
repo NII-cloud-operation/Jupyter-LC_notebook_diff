@@ -51,12 +51,61 @@ namespace JupyterNotebook {
 			html += '<div class="meme">';
 			html += '<span class="open-button">+</span><span class="close-button">-</span>';
 			html += '<span class="select-button">&nbsp;</span>';
-			let memeTokens = this.meme.split('-');
-			html += '<b>' + memeTokens.shift() + '</b>-' + memeTokens.join('-');
+			if (this.hasMeme) {
+				let memeTokens = this.meme.split('-');
+				html += '<b>' + memeTokens.shift() + '</b>-' + memeTokens.join('-');
+			}
 			html += '</div>';
 			html += '<div class="source">' + this.sourceEscaped + '</div>';
 			html += '</div>';
 			return html;
+		}
+
+		updateStyle(left: Notebook[], right: Notebook[]): void {
+			if (! this.hasMeme || left.length == 0) {
+				this.$view.removeClass("changed1");
+				this.$view.removeClass("changed2");
+			} else if (left.length == 1) {
+				if (this.checkChanged([this], left[0].getCellsByMeme(this.meme))) {
+					this.$view.addClass("changed1");
+					this.$view.removeClass("changed2");
+				} else {
+					this.$view.removeClass("changed1");
+					this.$view.removeClass("changed2");
+				}
+			} else {
+				let ch0 = this.checkChanged([this], left[0].getCellsByMeme(this.meme));
+				let ch1 = this.checkChanged([this], left[1].getCellsByMeme(this.meme));
+				let ch01 = this.checkChanged(left[0].getCellsByMeme(this.meme),
+				                             left[1].getCellsByMeme(this.meme));
+				if (ch01) {
+					if (ch0 == false) {
+						this.$view.removeClass("changed1");
+						this.$view.removeClass("changed2");
+					} else if (ch1 == false) {
+						this.$view.addClass("changed1");
+						this.$view.removeClass("changed2");
+					} else {
+						this.$view.removeClass("changed1");
+						this.$view.addClass("changed2");
+					}
+				} else {
+					if (ch0 || ch1) {
+						this.$view.addClass("changed1");
+						this.$view.removeClass("changed2");
+					} else {
+						this.$view.removeClass("changed1");
+						this.$view.removeClass("changed2");
+					}
+				}
+			}
+		}
+
+		get hasMeme(): boolean {
+			if (this.metaData["lc_cell_meme"] === undefined) {
+				return false;
+			}
+			return this.metaData["lc_cell_meme"]["current"] !== undefined;
 		}
 
 		/** このmemeを取得する */
@@ -143,6 +192,17 @@ namespace JupyterNotebook {
 					$selectButton.removeClass('marked');
 				}
 			}
+		}
+
+		private checkChanged(bases: Cell[], cells: Cell[]): boolean {
+			for (let base of bases) {
+				for (let target of cells) {
+					if (target.source.join("\n") != base.source.join("\n")) {
+						return true;
+					}
+				}
+			}
+			return false;
 		}
 	}
 }

@@ -90,6 +90,18 @@
 .jupyter-notebook-diff > .wrapper > .notebook > .cell.highlight > .source {
 	background-color: #ffffee;
 }
+.jupyter-notebook-diff > .wrapper > .notebook > .cell.changed1 > .source {
+	background-color: #ffffcc;
+}
+.jupyter-notebook-diff > .wrapper > .notebook > .cell.changed1.highlight > .source {
+	background-color: #ffff33;
+}
+.jupyter-notebook-diff > .wrapper > .notebook > .cell.changed2 > .source {
+	background-color: #ffd699;
+}
+.jupyter-notebook-diff > .wrapper > .notebook > .cell.changed2.highlight > .source {
+	background-color: #ff9900;
+}
 .jupyter-notebook-diff > .dark {
 	display: none;
 	position: fixed;

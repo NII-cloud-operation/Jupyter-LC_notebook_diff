@@ -55,6 +55,12 @@ namespace JupyterNotebook {
 			return html;
 		}
 
+		updateStyle(left: Notebook[], right: Notebook[]): void {
+			for (let cell of this.cellList) {
+				cell.updateStyle(left, right);
+			}
+		}
+
 		/** memeを指定してセルを取得する */
 		getCellsByMeme(meme: string): Cell[] {
 			let cells = this.cellMap[meme];
