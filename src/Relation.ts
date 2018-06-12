@@ -26,7 +26,7 @@ namespace JupyterNotebook {
 			let html = '';
 			let offsetY = -this.$view.offset().top + 14;
 			let height = Math.max(this.notebookLeft.$view.height(), this.notebookRight.$view.height());
-			html += '<div class="relation">';
+			html += '<div class="relation" style="height: ' + height + 'px">';
 			html += '<svg width="50" height="' + height + '">';
 			for (let i = 0; i < this.notebookLeft.count; i++) {
 				let cellLeft = this.notebookLeft.getCellAt(i);

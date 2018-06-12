@@ -278,6 +278,7 @@ var JupyterNotebook;
             else {
                 notebooks = this.notebooks;
             }
+            var self = this;
             var options = {
                 value: this.getSourceByMeme(meme, notebooks[1]),
                 origLeft: this.getSourceByMeme(meme, notebooks[0]),
@@ -286,11 +287,17 @@ var JupyterNotebook;
                 mode: "text/html",
                 highlightDifferences: true,
                 collapseIdentical: false,
-                readOnly: true
+                readOnly: true,
+                extraKeys: {
+                    Esc: function () {
+                        self.hideMergeView();
+                    }
+                }
             };
             this.$mergeView.show();
             this.$container.find('.dark').show();
-            this.codeMirror.MergeView(mergeViewElem, options);
+            var mv = this.codeMirror.MergeView(mergeViewElem, options);
+            mv.edit.focus();
         };
         DiffView.prototype.hideMergeView = function () {
             this.$mergeView.empty();
@@ -526,7 +533,7 @@ var JupyterNotebook;
             var html = '';
             var offsetY = -this.$view.offset().top + 14;
             var height = Math.max(this.notebookLeft.$view.height(), this.notebookRight.$view.height());
-            html += '<div class="relation">';
+            html += '<div class="relation" style="height: ' + height + 'px">';
             html += '<svg width="50" height="' + height + '">';
             for (var i = 0; i < this.notebookLeft.count; i++) {
                 var cellLeft = this.notebookLeft.getCellAt(i);
