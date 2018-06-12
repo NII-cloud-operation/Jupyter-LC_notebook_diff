@@ -533,7 +533,7 @@ var JupyterNotebook;
             var html = '';
             var offsetY = -this.$view.offset().top + 14;
             var height = Math.max(this.notebookLeft.$view.height(), this.notebookRight.$view.height());
-            html += '<div class="relation">';
+            html += '<div class="relation" style="height: ' + height + 'px">';
             html += '<svg width="50" height="' + height + '">';
             for (var i = 0; i < this.notebookLeft.count; i++) {
                 var cellLeft = this.notebookLeft.getCellAt(i);

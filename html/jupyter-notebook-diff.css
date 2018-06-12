@@ -46,7 +46,7 @@
 	padding: 5px;
 	border: 1px solid #ddd;
 	border-radius: 0 0 3px 3px;
-	overflow-x: scroll;
+	overflow-x: hidden;
 	overflow-y: hidden;
 }
 .jupyter-notebook-diff > .wrapper > .notebook > .cell > .meme > .open-button,
