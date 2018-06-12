@@ -121,6 +121,7 @@ namespace JupyterNotebook {
 			} else {
 				notebooks = this.notebooks;
 			}
+			let self = this;
 			let options = {
 				value: this.getSourceByMeme(meme, notebooks[1]),
 				origLeft: this.getSourceByMeme(meme, notebooks[0]),
@@ -129,11 +130,17 @@ namespace JupyterNotebook {
 				mode: "text/html",
 				highlightDifferences: true,
 				collapseIdentical: false,
-				readOnly: true
+				readOnly: true,
+				extraKeys: {
+					Esc: function(){
+						self.hideMergeView();
+					}
+				}
 			};
 			this.$mergeView.show();
 			this.$container.find('.dark').show();
-			this.codeMirror.MergeView(mergeViewElem, options);
+			let mv = this.codeMirror.MergeView(mergeViewElem, options);
+			mv.edit.focus();
 		}
 
 		/** マージビューを閉じる */
