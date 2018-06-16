@@ -114,7 +114,10 @@ define([
               .attr('id', 'diff-content')
               .addClass('jupyter-notebook-diff')
               .appendTo($('#diff-content-container'));
-            new JupyterDiff.DiffView($('#diff-content'), CodeMirror, filenames, []);
+            new JupyterDiff.DiffView($('#diff-content'), CodeMirror, filenames, [],
+                                     function(url, jqXHR, textStatus) {
+                                       showError('Cannot load ' + url + ': ' + textStatus);
+                                     });
           }
         });
 
