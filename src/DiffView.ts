@@ -52,10 +52,11 @@ namespace JupyterNotebook {
 				this.render();
 			} else {
 				// ロード
-				let filename = encodeURI(this.loadingFilenames.shift() as string);
+				let rawFilename = this.loadingFilenames.shift() as string;
 				if (this.loadingFilecontents.length == 0) {
+					let filename = encodeURI(rawFilename);
 					$.getJSON(filename, data => {
-					        this.notebooks.push(new Notebook(filename, data));
+					        this.notebooks.push(new Notebook(rawFilename, data));
 									if (this.notebooks.length >= 2) {
 										let i = this.notebooks.length - 2;
 										this.relations.push(new Relation(this.notebooks[i],
@@ -67,7 +68,7 @@ namespace JupyterNotebook {
 					});
 				} else {
 					var data = this.loadingFilecontents.shift() as string;
-					this.notebooks.push(new Notebook(filename, data));
+					this.notebooks.push(new Notebook(rawFilename, data));
 					if (this.notebooks.length >= 2) {
 						let i = this.notebooks.length - 2;
 						this.relations.push(new Relation(this.notebooks[i],
