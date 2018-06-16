@@ -202,7 +202,7 @@ define(JupyterNotebook);
 var JupyterNotebook;
 (function (JupyterNotebook) {
     var DiffView = (function () {
-        function DiffView(rootSelector, codeMirror, filenames, filecontents) {
+        function DiffView(rootSelector, codeMirror, filenames, filecontents, errorCallback) {
             this.rootSelector = rootSelector;
             this.codeMirror = codeMirror;
             this.$container = $(this.rootSelector);
@@ -211,33 +211,38 @@ var JupyterNotebook;
             this.loadingFilecontents = filecontents;
             this.notebooks = [];
             this.relations = [];
-            this.loadNext();
+            this.loadNext(errorCallback !== undefined ? errorCallback : function (url) {
+                console.error('Failed to load content', url);
+            });
         }
-        DiffView.prototype.loadNext = function () {
+        DiffView.prototype.loadNext = function (errorCallback) {
             var _this = this;
             if (this.loadingFilenames.length == 0) {
                 this.render();
             }
             else {
-                var filename_1 = this.loadingFilenames.shift();
+                var rawFilename_1 = this.loadingFilenames.shift();
                 if (this.loadingFilecontents.length == 0) {
+                    var filename_1 = encodeURI(rawFilename_1);
                     $.getJSON(filename_1, function (data) {
-                        _this.notebooks.push(new JupyterNotebook.Notebook(filename_1, data));
+                        _this.notebooks.push(new JupyterNotebook.Notebook(rawFilename_1, data));
                         if (_this.notebooks.length >= 2) {
                             var i = _this.notebooks.length - 2;
                             _this.relations.push(new JupyterNotebook.Relation(_this.notebooks[i], _this.notebooks[i + 1]));
                         }
-                        _this.loadNext();
+                        _this.loadNext(errorCallback);
+                    }).fail(function (jqXHR, textStatus, errorThrown) {
+                        errorCallback(filename_1, jqXHR, textStatus, errorThrown);
                     });
                 }
                 else {
                     var data = this.loadingFilecontents.shift();
-                    this.notebooks.push(new JupyterNotebook.Notebook(filename_1, data));
+                    this.notebooks.push(new JupyterNotebook.Notebook(rawFilename_1, data));
                     if (this.notebooks.length >= 2) {
                         var i = this.notebooks.length - 2;
                         this.relations.push(new JupyterNotebook.Relation(this.notebooks[i], this.notebooks[i + 1]));
                     }
-                    this.loadNext();
+                    this.loadNext(errorCallback);
                 }
             }
         };

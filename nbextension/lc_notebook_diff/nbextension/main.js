@@ -65,6 +65,23 @@ define([
                 .append(main);
     }
 
+    function getFilesFromQuery() {
+      var url = window.location.search;
+      if (! /^\?.+/.test(url)) {
+        return {};
+      }
+      var r = {};
+      url.slice(1).split('&').map(function(v) {
+        var elem = v.split('=');
+        if(elem.length == 2) {
+          r[elem[0]] = decodeURIComponent(elem[1]);
+        }else{
+          console.error('Invalid query', elem);
+        }
+      });
+      return r;
+    }
+
     function showError(message) {
       $('#notebook_diff_error').append($('<div></div>')
                                          .addClass('alert alert-danger')
@@ -96,6 +113,14 @@ define([
         $('<li>')
             .append(tab_link)
             .appendTo('#tabs');
+        var query = getFilesFromQuery();
+        for(var i = 0; i < 3; i ++) {
+          var key = 'diffpath' + (i + 1);
+          var fieldName = 'diff-file' + i;
+          if (query[key]) {
+            $('#' + fieldName).val(query[key]);
+          }
+        }
         $('#diff-search').click(function() {
           $('#diff-content-container').empty();
           var filenames = [];
@@ -114,7 +139,10 @@ define([
               .attr('id', 'diff-content')
               .addClass('jupyter-notebook-diff')
               .appendTo($('#diff-content-container'));
-            new JupyterDiff.DiffView($('#diff-content'), CodeMirror, filenames, []);
+            new JupyterDiff.DiffView($('#diff-content'), CodeMirror, filenames, [],
+                                     function(url, jqXHR, textStatus) {
+                                       showError('Cannot load ' + url + ': ' + textStatus);
+                                     });
           }
         });
 

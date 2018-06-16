@@ -30,7 +30,8 @@ namespace JupyterNotebook {
 
 		/** 初期化 */
 		constructor(rootSelector: string, codeMirror: any, filenames: string[],
-			          filecontents: string[]) {
+			          filecontents: string[],
+								errorCallback?: (url: string, jqXHR: any, textStatus: string, errorThrown: any) => void) {
 			this.rootSelector = rootSelector;
 			this.codeMirror = codeMirror;
 			this.$container = $(this.rootSelector);
@@ -39,36 +40,41 @@ namespace JupyterNotebook {
 			this.loadingFilecontents = filecontents;
 			this.notebooks = [];
 			this.relations = [];
-			this.loadNext();
+			this.loadNext(errorCallback !== undefined ? errorCallback : url => {
+				console.error('Failed to load content', url);
+			});
 		}
 
 		/** 次のNotebookをロードする */
-		private loadNext(): void {
+		private loadNext(errorCallback: (url: string, jqXHR: any, textStatus: string, errorThrown: any) => void): void {
 			if (this.loadingFilenames.length == 0) {
 				// 描画
 				this.render();
 			} else {
 				// ロード
-				let filename = this.loadingFilenames.shift() as string;
+				let rawFilename = this.loadingFilenames.shift() as string;
 				if (this.loadingFilecontents.length == 0) {
+					let filename = encodeURI(rawFilename);
 					$.getJSON(filename, data => {
-					        this.notebooks.push(new Notebook(filename, data));
+					        this.notebooks.push(new Notebook(rawFilename, data));
 									if (this.notebooks.length >= 2) {
 										let i = this.notebooks.length - 2;
 										this.relations.push(new Relation(this.notebooks[i],
 											                               this.notebooks[i + 1]));
 									}
-									this.loadNext();
+									this.loadNext(errorCallback);
+					}).fail((jqXHR, textStatus, errorThrown) => {
+						errorCallback(filename, jqXHR, textStatus, errorThrown);
 					});
 				} else {
 					var data = this.loadingFilecontents.shift() as string;
-					this.notebooks.push(new Notebook(filename, data));
+					this.notebooks.push(new Notebook(rawFilename, data));
 					if (this.notebooks.length >= 2) {
 						let i = this.notebooks.length - 2;
 						this.relations.push(new Relation(this.notebooks[i],
 							                               this.notebooks[i + 1]));
 					}
-					this.loadNext();
+					this.loadNext(errorCallback);
 				}
 			}
 		}
