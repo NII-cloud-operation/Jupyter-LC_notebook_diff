@@ -1,26 +1,16 @@
-requirejs.config({
-  paths: {
-    diff_match_patch: '/custom/diff_match_patch'
-  }
-});
-
 define([
   'jquery',
   'base/js/namespace',
   'base/js/utils',
   'require',
-  'diff_match_patch',
   'codemirror/lib/codemirror',
-  'codemirror/addon/merge/merge',
   './jupyter-notebook-diff'
 ], function(
   $,
   Jupyter,
   utils,
   require,
-  DiffMatchPatch,
   CodeMirror,
-  Merge,
   JupyterDiff
 ) {
     "use strict";
@@ -153,6 +143,12 @@ define([
     }
 
     function load_ipython_extension () {
+      requirejs.config({
+        paths: {
+          diff_match_patch: base_url + 'nbextensions/notebook_diff/diff_match_patch'
+        }
+      });
+      require(['codemirror/addon/merge/merge'], function(Merge) {
         // add css first
         $('<link>')
             .attr('rel', 'stylesheet')
@@ -176,6 +172,7 @@ define([
             .appendTo('head');
 
         insertTab();
+      });
     }
 
     return {
