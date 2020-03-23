@@ -28,10 +28,14 @@ namespace JupyterNotebook {
 		/** リレーション */
 		relations: Relation[];
 
+		/** マッチタイプ */
+		matchType: RelationMatchType;
+
 		/** 初期化 */
 		constructor(rootSelector: string, codeMirror: any, filenames: string[],
-			          filecontents: string[],
-								errorCallback?: (url: string, jqXHR: any, textStatus: string, errorThrown: any) => void) {
+					filecontents: string[],
+					errorCallback?: (url: string, jqXHR: any, textStatus: string, errorThrown: any) => void,
+					{matchType = RelationMatchType.Fuzzy}: { matchType?: RelationMatchType } = {}) {
 			this.rootSelector = rootSelector;
 			this.codeMirror = codeMirror;
 			this.$container = $(this.rootSelector);
@@ -40,6 +44,8 @@ namespace JupyterNotebook {
 			this.loadingFilecontents = filecontents;
 			this.notebooks = [];
 			this.relations = [];
+			this.matchType = matchType;
+			console.log(this.matchType);
 			this.loadNext(errorCallback !== undefined ? errorCallback : url => {
 				console.error('Failed to load content', url);
 			});
@@ -59,8 +65,8 @@ namespace JupyterNotebook {
 					        this.notebooks.push(new Notebook(rawFilename, data));
 									if (this.notebooks.length >= 2) {
 										let i = this.notebooks.length - 2;
-										this.relations.push(new Relation(this.notebooks[i],
-											                               this.notebooks[i + 1]));
+										this.relations.push(new Relation(this.notebooks[i], this.notebooks[i + 1],
+											{matchType: this.matchType}));
 									}
 									this.loadNext(errorCallback);
 					}).fail((jqXHR, textStatus, errorThrown) => {

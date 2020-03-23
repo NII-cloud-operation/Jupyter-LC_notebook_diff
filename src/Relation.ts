@@ -1,4 +1,9 @@
 namespace JupyterNotebook {
+	export enum RelationMatchType {
+		Exact = 'exact',
+		Fuzzy = 'fuzzy',
+	}
+
 	export class Relation {
 		/** ノートブック(左) */
 		notebookLeft: Notebook;
@@ -12,18 +17,22 @@ namespace JupyterNotebook {
 		/** Cell IDから隣の関連するCellリストへの連想配列 */
 		relatedCells: { [key: string]: Cell[] };
 
+		/** マッチタイプ */
+		matchType: JupyterNotebook.RelationMatchType;
+
 		/** 初期化 */
-		constructor(notebookLeft: Notebook, notebookRight: Notebook) {
+		constructor(notebookLeft: Notebook, notebookRight: Notebook,
+					{matchType = RelationMatchType.Fuzzy}: {matchType?: RelationMatchType} = {}) {
 			this.notebookLeft = notebookLeft;
 			this.notebookRight = notebookRight;
 			this.$view = $('<div class="relation"></div>');
 			this.relatedCells = {};
+			this.matchType = matchType;
 		}
 
 		/** リレーション構造を更新する */
 		updateRelation(): void {
 			this.relatedCells = {};
-			const usedRightCells: { [key: string]: boolean } = {};
 
 			for (const cellLeft of this.notebookLeft.cellList) {
 				this.relatedCells[cellLeft.id] = [];
@@ -32,26 +41,39 @@ namespace JupyterNotebook {
 				this.relatedCells[cellRight.id] = [];
 			}
 
-			for (const cellLeft of this.notebookLeft.cellList) {
-				const cellRightList = this.notebookRight.getCellsByMeme(cellLeft.meme)
-					.filter(cell => !usedRightCells[cell.id]);
-				for (const cellRight of cellRightList) {
-					this.relatedCells[cellLeft.id].push(cellRight);
-					this.relatedCells[cellRight.id].push(cellLeft);
-					usedRightCells[cellRight.id] = true;
+			if (this.matchType === RelationMatchType.Fuzzy) {
+				const usedRightCells: { [key: string]: boolean } = {};
+				for (const cellLeft of this.notebookLeft.cellList) {
+					const cellRightList = this.notebookRight.getCellsByMeme(cellLeft.meme)
+						.filter(cell => !usedRightCells[cell.id]);
+					for (const cellRight of cellRightList) {
+						this.relatedCells[cellLeft.id].push(cellRight);
+						this.relatedCells[cellRight.id].push(cellLeft);
+						usedRightCells[cellRight.id] = true;
+					}
 				}
-			}
 
-			for (const cellLeft of this.notebookLeft.cellList.filter(cell => !this.relatedCells[cell.id].length)) {
-				const cellRightList = this.notebookRight.cellList
-					.filter(cell => !usedRightCells[cell.id])
-					.filter(cell => cellLeft.memeUuid === cell.memeUuid)
-					.filter(cell => cellLeft.memeBranchNumber < cell.memeBranchNumber);
-				for (const cellRight of cellRightList) {
-					this.relatedCells[cellLeft.id].push(cellRight);
-					this.relatedCells[cellRight.id].push(cellLeft);
-					usedRightCells[cellRight.id] = true;
+				for (const cellLeft of this.notebookLeft.cellList.filter(cell => !this.relatedCells[cell.id].length)) {
+					const cellRightList = this.notebookRight.cellList
+						.filter(cell => !usedRightCells[cell.id])
+						.filter(cell => cellLeft.memeUuid === cell.memeUuid)
+						.filter(cell => cellLeft.memeBranchNumber < cell.memeBranchNumber);
+					for (const cellRight of cellRightList) {
+						this.relatedCells[cellLeft.id].push(cellRight);
+						this.relatedCells[cellRight.id].push(cellLeft);
+						usedRightCells[cellRight.id] = true;
+					}
 				}
+			} else if (this.matchType === RelationMatchType.Exact) {
+				for (const cellLeft of this.notebookLeft.cellList) {
+					const cellRightList = this.notebookRight.getCellsByMeme(cellLeft.meme);
+					for (const cellRight of cellRightList) {
+						this.relatedCells[cellLeft.id].push(cellRight);
+						this.relatedCells[cellRight.id].push(cellLeft);
+					}
+				}
+			} else {
+				throw new Error(`Invalid match type: ${this.matchType}`);
 			}
 		}
 
