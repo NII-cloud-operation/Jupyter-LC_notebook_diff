@@ -229,7 +229,6 @@ var JupyterNotebook;
             this.notebooks = [];
             this.relations = [];
             this.matchType = matchType;
-            console.log(this.matchType);
             this.loadNext(errorCallback !== undefined ? errorCallback : function (url) {
                 console.error('Failed to load content', url);
             });
@@ -623,8 +622,8 @@ var JupyterNotebook;
                     var cellLeft = _e[_d];
                     var cellRightList = this.notebookRight.getCellsByMeme(cellLeft.meme)
                         .filter(function (cell) { return !usedRightCells_1[cell.id]; });
-                    for (var _f = 0, cellRightList_1 = cellRightList; _f < cellRightList_1.length; _f++) {
-                        var cellRight = cellRightList_1[_f];
+                    if (cellRightList.length) {
+                        var cellRight = cellRightList[0];
                         this.relatedCells[cellLeft.id].push(cellRight);
                         this.relatedCells[cellRight.id].push(cellLeft);
                         usedRightCells_1[cellRight.id] = true;
@@ -635,25 +634,41 @@ var JupyterNotebook;
                         .filter(function (cell) { return !usedRightCells_1[cell.id]; })
                         .filter(function (cell) { return cellLeft.memeUuid === cell.memeUuid; })
                         .filter(function (cell) { return cellLeft.memeBranchNumber < cell.memeBranchNumber; });
-                    for (var _i = 0, cellRightList_3 = cellRightList; _i < cellRightList_3.length; _i++) {
-                        var cellRight = cellRightList_3[_i];
+                    if (cellRightList.length) {
+                        var cellRight = cellRightList[0];
                         this_1.relatedCells[cellLeft.id].push(cellRight);
                         this_1.relatedCells[cellRight.id].push(cellLeft);
                         usedRightCells_1[cellRight.id] = true;
                     }
                 };
                 var this_1 = this;
-                for (var _g = 0, _h = this.notebookLeft.cellList.filter(function (cell) { return !_this.relatedCells[cell.id].length; }); _g < _h.length; _g++) {
-                    var cellLeft = _h[_g];
+                for (var _f = 0, _g = this.notebookLeft.cellList.filter(function (cell) { return !_this.relatedCells[cell.id].length; }); _f < _g.length; _f++) {
+                    var cellLeft = _g[_f];
                     _loop_2(cellLeft);
+                }
+                var _loop_3 = function (cellLeft) {
+                    var cellRightList = this_2.notebookRight.cellList
+                        .filter(function (cell) { return !usedRightCells_1[cell.id]; })
+                        .filter(function (cell) { return cellLeft.memeUuid === cell.memeUuid; });
+                    if (cellRightList.length) {
+                        var cellRight = cellRightList[0];
+                        this_2.relatedCells[cellLeft.id].push(cellRight);
+                        this_2.relatedCells[cellRight.id].push(cellLeft);
+                        usedRightCells_1[cellRight.id] = true;
+                    }
+                };
+                var this_2 = this;
+                for (var _h = 0, _j = this.notebookLeft.cellList.filter(function (cell) { return !_this.relatedCells[cell.id].length; }); _h < _j.length; _h++) {
+                    var cellLeft = _j[_h];
+                    _loop_3(cellLeft);
                 }
             }
             else if (this.matchType === RelationMatchType.Exact) {
-                for (var _j = 0, _k = this.notebookLeft.cellList; _j < _k.length; _j++) {
-                    var cellLeft = _k[_j];
+                for (var _k = 0, _l = this.notebookLeft.cellList; _k < _l.length; _k++) {
+                    var cellLeft = _l[_k];
                     var cellRightList = this.notebookRight.getCellsByMeme(cellLeft.meme);
-                    for (var _l = 0, cellRightList_2 = cellRightList; _l < cellRightList_2.length; _l++) {
-                        var cellRight = cellRightList_2[_l];
+                    for (var _m = 0, cellRightList_1 = cellRightList; _m < cellRightList_1.length; _m++) {
+                        var cellRight = cellRightList_1[_m];
                         this.relatedCells[cellLeft.id].push(cellRight);
                         this.relatedCells[cellRight.id].push(cellLeft);
                     }
