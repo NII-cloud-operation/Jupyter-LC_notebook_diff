@@ -45,7 +45,6 @@ namespace JupyterNotebook {
 			this.notebooks = [];
 			this.relations = [];
 			this.matchType = matchType;
-			console.log(this.matchType);
 			this.loadNext(errorCallback !== undefined ? errorCallback : url => {
 				console.error('Failed to load content', url);
 			});
