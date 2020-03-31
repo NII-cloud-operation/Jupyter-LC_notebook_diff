@@ -46,7 +46,8 @@ namespace JupyterNotebook {
 				for (const cellLeft of this.notebookLeft.cellList) {
 					const cellRightList = this.notebookRight.getCellsByMeme(cellLeft.meme)
 						.filter(cell => !usedRightCells[cell.id]);
-					for (const cellRight of cellRightList) {
+					if (cellRightList.length) {
+						const cellRight = cellRightList[0];
 						this.relatedCells[cellLeft.id].push(cellRight);
 						this.relatedCells[cellRight.id].push(cellLeft);
 						usedRightCells[cellRight.id] = true;
@@ -58,7 +59,20 @@ namespace JupyterNotebook {
 						.filter(cell => !usedRightCells[cell.id])
 						.filter(cell => cellLeft.memeUuid === cell.memeUuid)
 						.filter(cell => cellLeft.memeBranchNumber < cell.memeBranchNumber);
-					for (const cellRight of cellRightList) {
+					if (cellRightList.length) {
+						const cellRight = cellRightList[0];
+						this.relatedCells[cellLeft.id].push(cellRight);
+						this.relatedCells[cellRight.id].push(cellLeft);
+						usedRightCells[cellRight.id] = true;
+					}
+				}
+
+				for (const cellLeft of this.notebookLeft.cellList.filter(cell => !this.relatedCells[cell.id].length)) {
+					const cellRightList = this.notebookRight.cellList
+						.filter(cell => !usedRightCells[cell.id])
+						.filter(cell => cellLeft.memeUuid === cell.memeUuid);
+					if (cellRightList.length) {
+						const cellRight = cellRightList[0];
 						this.relatedCells[cellLeft.id].push(cellRight);
 						this.relatedCells[cellRight.id].push(cellLeft);
 						usedRightCells[cellRight.id] = true;
