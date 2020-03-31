@@ -17,3 +17,11 @@
 #notebook_diff_error .alert {
   margin: 1em;
 }
+
+span.nbdiff-order {
+  margin-left: 1em;
+}
+
+button.nbdiff-order {
+  padding: 0;
+}
