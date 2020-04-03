@@ -28,10 +28,14 @@ namespace JupyterNotebook {
 		/** リレーション */
 		relations: Relation[];
 
+		/** マッチタイプ */
+		matchType: RelationMatchType;
+
 		/** 初期化 */
 		constructor(rootSelector: string, codeMirror: any, filenames: string[],
-			          filecontents: string[],
-								errorCallback?: (url: string, jqXHR: any, textStatus: string, errorThrown: any) => void) {
+					filecontents: string[],
+					errorCallback?: (url: string, jqXHR: any, textStatus: string, errorThrown: any) => void,
+					{matchType = RelationMatchType.Fuzzy}: { matchType?: RelationMatchType } = {}) {
 			this.rootSelector = rootSelector;
 			this.codeMirror = codeMirror;
 			this.$container = $(this.rootSelector);
@@ -40,6 +44,7 @@ namespace JupyterNotebook {
 			this.loadingFilecontents = filecontents;
 			this.notebooks = [];
 			this.relations = [];
+			this.matchType = matchType;
 			this.loadNext(errorCallback !== undefined ? errorCallback : url => {
 				console.error('Failed to load content', url);
 			});
@@ -59,8 +64,8 @@ namespace JupyterNotebook {
 					        this.notebooks.push(new Notebook(rawFilename, data));
 									if (this.notebooks.length >= 2) {
 										let i = this.notebooks.length - 2;
-										this.relations.push(new Relation(this.notebooks[i],
-											                               this.notebooks[i + 1]));
+										this.relations.push(new Relation(this.notebooks[i], this.notebooks[i + 1],
+											{matchType: this.matchType}));
 									}
 									this.loadNext(errorCallback);
 					}).fail((jqXHR, textStatus, errorThrown) => {
@@ -95,17 +100,21 @@ namespace JupyterNotebook {
 		}
 
 		/** セルをハイライトする */
-		private highlightCell(meme: string | null): void {
+		private highlightCell(cellId: string | null): void {
 			this.$container.find('.cell').removeClass('highlight');
-			if (meme != null) {
-				this.$container.find('.cell[data-meme="' + meme + '"]').addClass('highlight');
+			if (cellId != null) {
+				this.$container.find(`.cell[data-id="${cellId}"]`).addClass('highlight');
+				for (const cell of this.getRelatedCellsById(cellId)) {
+					this.$container.find(`.cell[data-id="${cell.id}"]`).addClass('highlight');
+				}
 			}
 		}
 
 		/** リレーションを更新する */
 		private updateRelations(): void {
 			for (let relation of this.relations) {
-				relation.update();
+				relation.updateRelation();
+				relation.updateView();
 			}
 		}
 
@@ -119,7 +128,7 @@ namespace JupyterNotebook {
 		}
 
 		/** マージビューを表示する */
-		private showMergeView(meme: string): void {
+		private showMergeView(cellId: string): void {
 			let mergeViewElem = this.$mergeView[0];
 			let notebooks: Array<Notebook | null> = [];
 			if (this.notebooks.length == 2) {
@@ -127,11 +136,27 @@ namespace JupyterNotebook {
 			} else {
 				notebooks = this.notebooks;
 			}
+
+			const relatedCells = this.getRelatedCellsById(cellId);
+			const targetCell = this.cellById(cellId) as Cell;
+			const sources: Array<string | null> = [null, null, null];
+			for (let i = 0; i < 3; i++) {
+				if (!notebooks[i]) continue;
+				const notebook = notebooks[i] as Notebook;
+				if (notebook === targetCell.notebook) {
+					sources[i] = targetCell.sourceAll;
+				} else {
+					const cell = relatedCells.filter(cell => notebook.cellList.indexOf(cell) !== -1).shift();
+					if (!cell) continue;
+					sources[i] = cell.sourceAll;
+				}
+			}
+
 			let self = this;
 			let options = {
-				value: this.getSourceByMeme(meme, notebooks[1]),
-				origLeft: this.getSourceByMeme(meme, notebooks[0]),
-				origRight: this.getSourceByMeme(meme, notebooks[2]),
+				value: sources[1],
+				origLeft: sources[0],
+				origRight: sources[2],
 				lineNumbers: true,
 				mode: "text/html",
 				highlightDifferences: true,
@@ -215,22 +240,17 @@ namespace JupyterNotebook {
 
 		/** セルを選択する */
 		private select(cell: Cell): void {
-			// 選択中以外のノートブックに対する処理
 			for (let notebook of this.notebooks) {
-				if (notebook != cell.notebook) {
-					if (cell.meme != notebook.selectedMeme()) {
-						notebook.unselectAll();
-						notebook.selectByMeme(cell.meme);
-					}
-				}
+				notebook.unselectAll();
+				notebook.unmarkAll();
 			}
 
-			// 選択中のノートブックに対する処理
-			cell.notebook.unselectAll();
 			cell.select(true);
-
-			// マーク
-			this.markByMeme(cell.meme);
+			cell.mark(true);
+			for (const relatedCell of this.getRelatedCellsById(cell.id)) {
+				relatedCell.select(true);
+				relatedCell.mark(true);
+			}
 		}
 
 		/** 描画を行う */
@@ -271,11 +291,10 @@ namespace JupyterNotebook {
 				return false;
 			});
 			this.$container.on('click', '.cell', (e) => {
-				let meme = $(e.currentTarget).attr('data-meme');
-				this.showMergeView(meme);
+				this.showMergeView($(e.currentTarget).attr('data-id'));
 			});
 			this.$container.on('mouseenter', '.cell', (e) => {
-				this.highlightCell($(e.currentTarget).attr('data-meme'));
+				this.highlightCell($(e.currentTarget).attr('data-id'));
 			});
 			this.$container.on('mouseleave', '.cell', (e) => {
 				this.highlightCell(null);
@@ -295,6 +314,24 @@ namespace JupyterNotebook {
 			setInterval(() => {
 				this.updateRelations();
 			});
+		}
+
+		/** 指定したCellに関連するCellを関連度順にすべて取得する */
+		private getRelatedCellsById(cellId: string): Cell[] {
+			const queue: string[] = [cellId];
+			const related: { [key: string]: Cell } = {};
+			while (queue.length) {
+				const current = queue.shift() as string;
+				for (const relation of this.relations) {
+					for (const cell of relation.relatedCells[current] || []) {
+						if (!related[cell.id]) {
+							related[cell.id] = cell;
+							queue.push(cell.id);
+						}
+					}
+				}
+			}
+			return Object.keys(related).map(id => related[id]);
 		}
 	}
 }

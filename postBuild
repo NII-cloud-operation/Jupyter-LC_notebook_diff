@@ -1,0 +1,6 @@
+jupyter nbextension install --py lc_notebook_diff --sys-prefix
+jupyter nbextension enable --py lc_notebook_diff --sys-prefix
+
+pip install https://github.com/NII-cloud-operation/Jupyter-LC_nblineage/tarball/master
+
+jupyter nblineage quick-setup --sys-prefix

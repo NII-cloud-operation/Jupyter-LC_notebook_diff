@@ -115,6 +115,13 @@ namespace JupyterNotebook {
 			}
 		}
 
+		/** すべてのセルをアンマークする */
+		unmarkAll(): void {
+			for (const cell of this.cellList) {
+				cell.mark(false);
+			}
+		}
+
 		/** セルの数を取得する */
 		get count(): number {
 			return this.cellList.length;

@@ -27,9 +27,42 @@ define([
                     .addClass('list-group col-xs-12')
                     .appendTo(main);
 
-      for(var i = 0; i < 3; i ++) {
+      [0, 1, 2].forEach(i => {
         var fieldName = 'diff-file' + i;
         var displayName = 'File #' + (i + 1).toString();
+        const orderPanel = $('<span></span>').addClass('nbdiff-order');
+        if (i > 0) {
+          const icon = $('<i></i>')
+            .addClass('fa fa-arrow-up')
+          const arrowButton = $('<button></button>')
+            .addClass('btn btn-link nbdiff-order')
+            .append(icon);
+          arrowButton.click(() => {
+            console.log('UP', i - 1, i);
+            const t1 = $(`#diff-file${i - 1}`);
+            const t2 = $(`#diff-file${i}`);
+            const v = t1.val();
+            t1.val(t2.val());
+            t2.val(v);
+          });
+          orderPanel.append(arrowButton);
+        }
+        if (i < 2) {
+          const icon = $('<i></i>')
+            .addClass('fa fa-arrow-down')
+          const arrowButton = $('<button></button>')
+            .addClass('btn btn-link nbdiff-order')
+            .append(icon);
+          arrowButton.click(() => {
+            console.log('DOWN', i, i + 1);
+            const t1 = $(`#diff-file${i}`);
+            const t2 = $(`#diff-file${i + 1}`);
+            const v = t1.val();
+            t1.val(t2.val());
+            t2.val(v);
+          });
+          orderPanel.append(arrowButton);
+        }
         files.append($('<div></div>')
                        .addClass('form-group list-group-item col-xs-12')
                        .append($('<label></label>')
@@ -39,8 +72,9 @@ define([
                        .append($('<input></input>')
                          .attr('type', 'text')
                          .addClass('col-xs-8')
-                         .attr('id', fieldName)));
-      }
+                         .attr('id', fieldName))
+                       .append(orderPanel));
+      });
       files.append($('<div></div>')
                      .addClass('form-group list-group-item col-xs-12')
                      .append($('<button></button>')

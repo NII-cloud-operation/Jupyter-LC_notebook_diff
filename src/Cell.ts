@@ -113,6 +113,18 @@ namespace JupyterNotebook {
 			return this.metaData["lc_cell_meme"]["current"];
 		}
 
+		/** このmemeのUUIDを取得する */
+		get memeUuid(): string {
+			return this.meme ? this.meme.split('-').slice(0, 5).join('-') : '';
+		}
+
+		/** このmemeの枝番数を取得する */
+		get memeBranchNumber(): number {
+			const meme = this.meme || '';
+			const numStr = meme.split('-').slice(5, 6).pop() || '';
+			return numStr ? parseInt(numStr, 10) : 0;
+		}
+
 		/** 次のmemeを取得する */
 		get nextMeme(): string {
 			return this.metaData["lc_cell_meme"]["next"];

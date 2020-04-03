@@ -1,4 +1,9 @@
 namespace JupyterNotebook {
+	export enum RelationMatchType {
+		Exact = 'exact',
+		Fuzzy = 'fuzzy',
+	}
+
 	export class Relation {
 		/** ノートブック(左) */
 		notebookLeft: Notebook;
@@ -9,15 +14,85 @@ namespace JupyterNotebook {
 		/** JQueryノード */
 		$view: JQuery;
 
+		/** Cell IDから隣の関連するCellリストへの連想配列 */
+		relatedCells: { [key: string]: Cell[] };
+
+		/** マッチタイプ */
+		matchType: JupyterNotebook.RelationMatchType;
+
 		/** 初期化 */
-		constructor(notebookLeft: Notebook, notebookRight: Notebook) {
+		constructor(notebookLeft: Notebook, notebookRight: Notebook,
+					{matchType = RelationMatchType.Fuzzy}: {matchType?: RelationMatchType} = {}) {
 			this.notebookLeft = notebookLeft;
 			this.notebookRight = notebookRight;
 			this.$view = $('<div class="relation"></div>');
+			this.relatedCells = {};
+			this.matchType = matchType;
+		}
+
+		/** リレーション構造を更新する */
+		updateRelation(): void {
+			this.relatedCells = {};
+
+			for (const cellLeft of this.notebookLeft.cellList) {
+				this.relatedCells[cellLeft.id] = [];
+			}
+			for (const cellRight of this.notebookRight.cellList) {
+				this.relatedCells[cellRight.id] = [];
+			}
+
+			if (this.matchType === RelationMatchType.Fuzzy) {
+				const usedRightCells: { [key: string]: boolean } = {};
+				for (const cellLeft of this.notebookLeft.cellList) {
+					const cellRightList = this.notebookRight.getCellsByMeme(cellLeft.meme)
+						.filter(cell => !usedRightCells[cell.id]);
+					if (cellRightList.length) {
+						const cellRight = cellRightList[0];
+						this.relatedCells[cellLeft.id].push(cellRight);
+						this.relatedCells[cellRight.id].push(cellLeft);
+						usedRightCells[cellRight.id] = true;
+					}
+				}
+
+				for (const cellLeft of this.notebookLeft.cellList.filter(cell => !this.relatedCells[cell.id].length)) {
+					const cellRightList = this.notebookRight.cellList
+						.filter(cell => !usedRightCells[cell.id])
+						.filter(cell => cellLeft.memeUuid === cell.memeUuid)
+						.filter(cell => cellLeft.memeBranchNumber < cell.memeBranchNumber);
+					if (cellRightList.length) {
+						const cellRight = cellRightList[0];
+						this.relatedCells[cellLeft.id].push(cellRight);
+						this.relatedCells[cellRight.id].push(cellLeft);
+						usedRightCells[cellRight.id] = true;
+					}
+				}
+
+				for (const cellLeft of this.notebookLeft.cellList.filter(cell => !this.relatedCells[cell.id].length)) {
+					const cellRightList = this.notebookRight.cellList
+						.filter(cell => !usedRightCells[cell.id])
+						.filter(cell => cellLeft.memeUuid === cell.memeUuid);
+					if (cellRightList.length) {
+						const cellRight = cellRightList[0];
+						this.relatedCells[cellLeft.id].push(cellRight);
+						this.relatedCells[cellRight.id].push(cellLeft);
+						usedRightCells[cellRight.id] = true;
+					}
+				}
+			} else if (this.matchType === RelationMatchType.Exact) {
+				for (const cellLeft of this.notebookLeft.cellList) {
+					const cellRightList = this.notebookRight.getCellsByMeme(cellLeft.meme);
+					for (const cellRight of cellRightList) {
+						this.relatedCells[cellLeft.id].push(cellRight);
+						this.relatedCells[cellRight.id].push(cellLeft);
+					}
+				}
+			} else {
+				throw new Error(`Invalid match type: ${this.matchType}`);
+			}
 		}
 
 		/** 描画を更新する */
-		update(): void {
+		updateView(): void {
 			this.$view.html(this.html());
 		}
 
@@ -28,11 +103,8 @@ namespace JupyterNotebook {
 			let height = Math.max(this.notebookLeft.$view.height(), this.notebookRight.$view.height());
 			html += '<div class="relation" style="height: ' + height + 'px">';
 			html += '<svg width="50" height="' + height + '">';
-			for (let i = 0; i < this.notebookLeft.count; i++) {
-				let cellLeft = this.notebookLeft.getCellAt(i);
-				let cellRightList = this.notebookRight.getCellsByMeme(cellLeft.meme);
-				for (let j = 0;j < cellRightList.length;j ++) {
-					let cellRight = cellRightList[j];
+			for (const cellLeft of this.notebookLeft.cellList) {
+				for (const cellRight of this.relatedCells[cellLeft.id]) {
 					let y0 = cellLeft.y + offsetY;
 					let y1 = cellRight.y + offsetY;
 					html += '<path d="M 0,' + y0 + ' C 25,' + y0 + ' 25,' + y1 + ' 50,' + y1;

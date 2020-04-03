@@ -90,6 +90,22 @@ var JupyterNotebook;
             enumerable: true,
             configurable: true
         });
+        Object.defineProperty(Cell.prototype, "memeUuid", {
+            get: function () {
+                return this.meme ? this.meme.split('-').slice(0, 5).join('-') : '';
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(Cell.prototype, "memeBranchNumber", {
+            get: function () {
+                var meme = this.meme || '';
+                var numStr = meme.split('-').slice(5, 6).pop() || '';
+                return numStr ? parseInt(numStr, 10) : 0;
+            },
+            enumerable: true,
+            configurable: true
+        });
         Object.defineProperty(Cell.prototype, "nextMeme", {
             get: function () {
                 return this.metaData["lc_cell_meme"]["next"];
@@ -202,7 +218,8 @@ define(JupyterNotebook);
 var JupyterNotebook;
 (function (JupyterNotebook) {
     var DiffView = (function () {
-        function DiffView(rootSelector, codeMirror, filenames, filecontents, errorCallback) {
+        function DiffView(rootSelector, codeMirror, filenames, filecontents, errorCallback, _a) {
+            var _b = (_a === void 0 ? {} : _a).matchType, matchType = _b === void 0 ? JupyterNotebook.RelationMatchType.Fuzzy : _b;
             this.rootSelector = rootSelector;
             this.codeMirror = codeMirror;
             this.$container = $(this.rootSelector);
@@ -211,6 +228,7 @@ var JupyterNotebook;
             this.loadingFilecontents = filecontents;
             this.notebooks = [];
             this.relations = [];
+            this.matchType = matchType;
             this.loadNext(errorCallback !== undefined ? errorCallback : function (url) {
                 console.error('Failed to load content', url);
             });
@@ -228,7 +246,7 @@ var JupyterNotebook;
                         _this.notebooks.push(new JupyterNotebook.Notebook(rawFilename_1, data));
                         if (_this.notebooks.length >= 2) {
                             var i = _this.notebooks.length - 2;
-                            _this.relations.push(new JupyterNotebook.Relation(_this.notebooks[i], _this.notebooks[i + 1]));
+                            _this.relations.push(new JupyterNotebook.Relation(_this.notebooks[i], _this.notebooks[i + 1], { matchType: _this.matchType }));
                         }
                         _this.loadNext(errorCallback);
                     }).fail(function (jqXHR, textStatus, errorThrown) {
@@ -253,16 +271,21 @@ var JupyterNotebook;
             var offset = this.getCellDom(notebookMeme, cellMeme).offset();
             return offset == undefined ? NaN : offset.top;
         };
-        DiffView.prototype.highlightCell = function (meme) {
+        DiffView.prototype.highlightCell = function (cellId) {
             this.$container.find('.cell').removeClass('highlight');
-            if (meme != null) {
-                this.$container.find('.cell[data-meme="' + meme + '"]').addClass('highlight');
+            if (cellId != null) {
+                this.$container.find(".cell[data-id=\"" + cellId + "\"]").addClass('highlight');
+                for (var _i = 0, _a = this.getRelatedCellsById(cellId); _i < _a.length; _i++) {
+                    var cell = _a[_i];
+                    this.$container.find(".cell[data-id=\"" + cell.id + "\"]").addClass('highlight');
+                }
             }
         };
         DiffView.prototype.updateRelations = function () {
             for (var _i = 0, _a = this.relations; _i < _a.length; _i++) {
                 var relation = _a[_i];
-                relation.update();
+                relation.updateRelation();
+                relation.updateView();
             }
         };
         DiffView.prototype.getSourceByMeme = function (meme, notebook) {
@@ -274,7 +297,7 @@ var JupyterNotebook;
                 return cell == null ? null : cell.sourceAll;
             }
         };
-        DiffView.prototype.showMergeView = function (meme) {
+        DiffView.prototype.showMergeView = function (cellId) {
             var mergeViewElem = this.$mergeView[0];
             var notebooks = [];
             if (this.notebooks.length == 2) {
@@ -283,11 +306,31 @@ var JupyterNotebook;
             else {
                 notebooks = this.notebooks;
             }
+            var relatedCells = this.getRelatedCellsById(cellId);
+            var targetCell = this.cellById(cellId);
+            var sources = [null, null, null];
+            var _loop_1 = function (i) {
+                if (!notebooks[i])
+                    return "continue";
+                var notebook = notebooks[i];
+                if (notebook === targetCell.notebook) {
+                    sources[i] = targetCell.sourceAll;
+                }
+                else {
+                    var cell = relatedCells.filter(function (cell) { return notebook.cellList.indexOf(cell) !== -1; }).shift();
+                    if (!cell)
+                        return "continue";
+                    sources[i] = cell.sourceAll;
+                }
+            };
+            for (var i = 0; i < 3; i++) {
+                _loop_1(i);
+            }
             var self = this;
             var options = {
-                value: this.getSourceByMeme(meme, notebooks[1]),
-                origLeft: this.getSourceByMeme(meme, notebooks[0]),
-                origRight: this.getSourceByMeme(meme, notebooks[2]),
+                value: sources[1],
+                origLeft: sources[0],
+                origRight: sources[2],
                 lineNumbers: true,
                 mode: "text/html",
                 highlightDifferences: true,
@@ -360,16 +403,16 @@ var JupyterNotebook;
         DiffView.prototype.select = function (cell) {
             for (var _i = 0, _a = this.notebooks; _i < _a.length; _i++) {
                 var notebook = _a[_i];
-                if (notebook != cell.notebook) {
-                    if (cell.meme != notebook.selectedMeme()) {
-                        notebook.unselectAll();
-                        notebook.selectByMeme(cell.meme);
-                    }
-                }
+                notebook.unselectAll();
+                notebook.unmarkAll();
             }
-            cell.notebook.unselectAll();
             cell.select(true);
-            this.markByMeme(cell.meme);
+            cell.mark(true);
+            for (var _b = 0, _c = this.getRelatedCellsById(cell.id); _b < _c.length; _b++) {
+                var relatedCell = _c[_b];
+                relatedCell.select(true);
+                relatedCell.mark(true);
+            }
         };
         DiffView.prototype.render = function () {
             var _this = this;
@@ -406,11 +449,10 @@ var JupyterNotebook;
                 return false;
             });
             this.$container.on('click', '.cell', function (e) {
-                var meme = $(e.currentTarget).attr('data-meme');
-                _this.showMergeView(meme);
+                _this.showMergeView($(e.currentTarget).attr('data-id'));
             });
             this.$container.on('mouseenter', '.cell', function (e) {
-                _this.highlightCell($(e.currentTarget).attr('data-meme'));
+                _this.highlightCell($(e.currentTarget).attr('data-id'));
             });
             this.$container.on('mouseleave', '.cell', function (e) {
                 _this.highlightCell(null);
@@ -430,6 +472,24 @@ var JupyterNotebook;
             setInterval(function () {
                 _this.updateRelations();
             });
+        };
+        DiffView.prototype.getRelatedCellsById = function (cellId) {
+            var queue = [cellId];
+            var related = {};
+            while (queue.length) {
+                var current = queue.shift();
+                for (var _i = 0, _a = this.relations; _i < _a.length; _i++) {
+                    var relation = _a[_i];
+                    for (var _b = 0, _c = relation.relatedCells[current] || []; _b < _c.length; _b++) {
+                        var cell = _c[_b];
+                        if (!related[cell.id]) {
+                            related[cell.id] = cell;
+                            queue.push(cell.id);
+                        }
+                    }
+                }
+            }
+            return Object.keys(related).map(function (id) { return related[id]; });
         };
         return DiffView;
     }());
@@ -512,6 +572,12 @@ var JupyterNotebook;
                 cell.mark(cell.meme == meme);
             }
         };
+        Notebook.prototype.unmarkAll = function () {
+            for (var _i = 0, _a = this.cellList; _i < _a.length; _i++) {
+                var cell = _a[_i];
+                cell.mark(false);
+            }
+        };
         Object.defineProperty(Notebook.prototype, "count", {
             get: function () {
                 return this.cellList.length;
@@ -525,13 +591,94 @@ var JupyterNotebook;
 })(JupyterNotebook || (JupyterNotebook = {}));
 var JupyterNotebook;
 (function (JupyterNotebook) {
+    var RelationMatchType;
+    (function (RelationMatchType) {
+        RelationMatchType["Exact"] = "exact";
+        RelationMatchType["Fuzzy"] = "fuzzy";
+    })(RelationMatchType = JupyterNotebook.RelationMatchType || (JupyterNotebook.RelationMatchType = {}));
     var Relation = (function () {
-        function Relation(notebookLeft, notebookRight) {
+        function Relation(notebookLeft, notebookRight, _a) {
+            var _b = (_a === void 0 ? {} : _a).matchType, matchType = _b === void 0 ? RelationMatchType.Fuzzy : _b;
             this.notebookLeft = notebookLeft;
             this.notebookRight = notebookRight;
             this.$view = $('<div class="relation"></div>');
+            this.relatedCells = {};
+            this.matchType = matchType;
         }
-        Relation.prototype.update = function () {
+        Relation.prototype.updateRelation = function () {
+            var _this = this;
+            this.relatedCells = {};
+            for (var _i = 0, _a = this.notebookLeft.cellList; _i < _a.length; _i++) {
+                var cellLeft = _a[_i];
+                this.relatedCells[cellLeft.id] = [];
+            }
+            for (var _b = 0, _c = this.notebookRight.cellList; _b < _c.length; _b++) {
+                var cellRight = _c[_b];
+                this.relatedCells[cellRight.id] = [];
+            }
+            if (this.matchType === RelationMatchType.Fuzzy) {
+                var usedRightCells_1 = {};
+                for (var _d = 0, _e = this.notebookLeft.cellList; _d < _e.length; _d++) {
+                    var cellLeft = _e[_d];
+                    var cellRightList = this.notebookRight.getCellsByMeme(cellLeft.meme)
+                        .filter(function (cell) { return !usedRightCells_1[cell.id]; });
+                    if (cellRightList.length) {
+                        var cellRight = cellRightList[0];
+                        this.relatedCells[cellLeft.id].push(cellRight);
+                        this.relatedCells[cellRight.id].push(cellLeft);
+                        usedRightCells_1[cellRight.id] = true;
+                    }
+                }
+                var _loop_2 = function (cellLeft) {
+                    var cellRightList = this_1.notebookRight.cellList
+                        .filter(function (cell) { return !usedRightCells_1[cell.id]; })
+                        .filter(function (cell) { return cellLeft.memeUuid === cell.memeUuid; })
+                        .filter(function (cell) { return cellLeft.memeBranchNumber < cell.memeBranchNumber; });
+                    if (cellRightList.length) {
+                        var cellRight = cellRightList[0];
+                        this_1.relatedCells[cellLeft.id].push(cellRight);
+                        this_1.relatedCells[cellRight.id].push(cellLeft);
+                        usedRightCells_1[cellRight.id] = true;
+                    }
+                };
+                var this_1 = this;
+                for (var _f = 0, _g = this.notebookLeft.cellList.filter(function (cell) { return !_this.relatedCells[cell.id].length; }); _f < _g.length; _f++) {
+                    var cellLeft = _g[_f];
+                    _loop_2(cellLeft);
+                }
+                var _loop_3 = function (cellLeft) {
+                    var cellRightList = this_2.notebookRight.cellList
+                        .filter(function (cell) { return !usedRightCells_1[cell.id]; })
+                        .filter(function (cell) { return cellLeft.memeUuid === cell.memeUuid; });
+                    if (cellRightList.length) {
+                        var cellRight = cellRightList[0];
+                        this_2.relatedCells[cellLeft.id].push(cellRight);
+                        this_2.relatedCells[cellRight.id].push(cellLeft);
+                        usedRightCells_1[cellRight.id] = true;
+                    }
+                };
+                var this_2 = this;
+                for (var _h = 0, _j = this.notebookLeft.cellList.filter(function (cell) { return !_this.relatedCells[cell.id].length; }); _h < _j.length; _h++) {
+                    var cellLeft = _j[_h];
+                    _loop_3(cellLeft);
+                }
+            }
+            else if (this.matchType === RelationMatchType.Exact) {
+                for (var _k = 0, _l = this.notebookLeft.cellList; _k < _l.length; _k++) {
+                    var cellLeft = _l[_k];
+                    var cellRightList = this.notebookRight.getCellsByMeme(cellLeft.meme);
+                    for (var _m = 0, cellRightList_1 = cellRightList; _m < cellRightList_1.length; _m++) {
+                        var cellRight = cellRightList_1[_m];
+                        this.relatedCells[cellLeft.id].push(cellRight);
+                        this.relatedCells[cellRight.id].push(cellLeft);
+                    }
+                }
+            }
+            else {
+                throw new Error("Invalid match type: " + this.matchType);
+            }
+        };
+        Relation.prototype.updateView = function () {
             this.$view.html(this.html());
         };
         Relation.prototype.html = function () {
@@ -540,11 +687,10 @@ var JupyterNotebook;
             var height = Math.max(this.notebookLeft.$view.height(), this.notebookRight.$view.height());
             html += '<div class="relation" style="height: ' + height + 'px">';
             html += '<svg width="50" height="' + height + '">';
-            for (var i = 0; i < this.notebookLeft.count; i++) {
-                var cellLeft = this.notebookLeft.getCellAt(i);
-                var cellRightList = this.notebookRight.getCellsByMeme(cellLeft.meme);
-                for (var j = 0; j < cellRightList.length; j++) {
-                    var cellRight = cellRightList[j];
+            for (var _i = 0, _a = this.notebookLeft.cellList; _i < _a.length; _i++) {
+                var cellLeft = _a[_i];
+                for (var _b = 0, _c = this.relatedCells[cellLeft.id]; _b < _c.length; _b++) {
+                    var cellRight = _c[_b];
                     var y0 = cellLeft.y + offsetY;
                     var y1 = cellRight.y + offsetY;
                     html += '<path d="M 0,' + y0 + ' C 25,' + y0 + ' 25,' + y1 + ' 50,' + y1;
