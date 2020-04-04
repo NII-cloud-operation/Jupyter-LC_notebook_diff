@@ -346,19 +346,22 @@ namespace JupyterNotebook {
 		/** 指定したCellに関連するCellを関連度順にすべて取得する */
 		private getRelatedCellsById(cellId: string): Cell[] {
 			const queue: string[] = [cellId];
-			const related: { [key: string]: Cell } = {};
+			const related: Cell[] = [];
+			const used: { [key: string]: boolean } = {};
+			used[cellId] = true;
 			while (queue.length) {
 				const current = queue.shift() as string;
 				for (const relation of this.relations) {
 					for (const cell of relation.getRelatedCells(current)) {
-						if (!related[cell.id]) {
-							related[cell.id] = cell;
+						if (!used[cell.id]) {
+							used[cell.id] = true;
+							related.push(cell);
 							queue.push(cell.id);
 						}
 					}
 				}
 			}
-			return Object.keys(related).map(id => related[id]);
+			return related;
 		}
 	}
 }
