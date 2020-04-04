@@ -111,10 +111,16 @@ namespace JupyterNotebook {
 		}
 
 		/** リレーションを更新する */
+		private updateRelationsView(): void {
+			for (let relation of this.relations) {
+				relation.updateView();
+			}
+		}
+
+		/** リレーションを計算する */
 		private updateRelations(): void {
 			for (let relation of this.relations) {
 				relation.updateRelation();
-				relation.updateView();
 			}
 		}
 
@@ -255,6 +261,8 @@ namespace JupyterNotebook {
 
 		/** 描画を行う */
 		private render(): void {
+			this.updateRelations();
+
 			// HTMLを生成する
 			let $wrapper = $('<div class="wrapper"></div>');
 			this.$container.empty();
@@ -272,13 +280,13 @@ namespace JupyterNotebook {
 			this.$container.on('click', '.open-button', (e) => {
 				$(e.target).parent().parent().removeClass('closed');
 				this.resetCellY();
-				this.updateRelations();
+				this.updateRelationsView();
 				return false;
 			});
 			this.$container.on('click', '.close-button', (e) => {
 				$(e.target).parent().parent().addClass('closed');
 				this.resetCellY();
-				this.updateRelations();
+				this.updateRelationsView();
 				return false;
 			});
 			this.$container.on('click', '.select-button', (e) => {
@@ -302,18 +310,37 @@ namespace JupyterNotebook {
 			this.$container.on('click', '.dark', (e) => {
 				this.hideMergeView();
 			});
+
 			if (this.notebooks.length == 2) {
-				this.notebooks[0].updateStyle([], [this.notebooks[1]]);
-				this.notebooks[1].updateStyle([this.notebooks[0]], []);
+				this.updateCellsStyle(this.notebooks[1], this.relations.slice(0, 1));
 			} else {
-				this.notebooks[0].updateStyle([], this.notebooks.slice(1));
-				this.notebooks[1].updateStyle([this.notebooks[0]], [this.notebooks[2]]);
-				this.notebooks[2].updateStyle(this.notebooks.slice(0, 2), []);
+				this.updateCellsStyle(this.notebooks[1], this.relations.slice(0, 1));
+				this.updateCellsStyle(this.notebooks[2], this.relations.slice(0, 2));
 			}
 
 			setInterval(() => {
-				this.updateRelations();
+				this.updateRelationsView();
 			});
+		}
+
+		/** 指定したNotebook内のすべてのCellのスタイルを更新する */
+		private updateCellsStyle(notebook: Notebook, relations: Relation[]): void {
+			relations.reverse();
+			for (const cell of notebook.cellList) {
+				const leftCellsList: Cell[][] = [];
+				let rightCells: Cell[] = [cell];
+				for (const relation of relations) {
+					const leftCells: Cell[] = [];
+					for (const rightCell of rightCells) {
+						for (const leftCell of relation.relatedLeftCells[rightCell.id] || []) {
+							leftCells.push(leftCell);
+						}
+					}
+					leftCellsList.push(leftCells);
+					rightCells = leftCells;
+				}
+				cell.updateStyle(leftCellsList.reverse());
+			}
 		}
 
 		/** 指定したCellに関連するCellを関連度順にすべて取得する */
@@ -323,7 +350,7 @@ namespace JupyterNotebook {
 			while (queue.length) {
 				const current = queue.shift() as string;
 				for (const relation of this.relations) {
-					for (const cell of relation.relatedCells[current] || []) {
+					for (const cell of relation.getRelatedCells(current)) {
 						if (!related[cell.id]) {
 							related[cell.id] = cell;
 							queue.push(cell.id);

@@ -61,12 +61,16 @@ namespace JupyterNotebook {
 			return html;
 		}
 
-		updateStyle(left: Notebook[], right: Notebook[]): void {
-			if (! this.hasMeme || left.length == 0) {
+		/**
+		 * スタイルを更新する
+		 * 関連するCellと異なるソースであれば色を変える
+		 */
+		updateStyle(leftCellsList: Cell[][]): void {
+			if (!this.hasMeme || !leftCellsList.length) {
 				this.$view.removeClass("changed1");
 				this.$view.removeClass("changed2");
-			} else if (left.length == 1) {
-				if (this.checkChanged([this], left[0].getCellsByMeme(this.meme))) {
+			} else if (leftCellsList.length == 1) {
+				if (this.checkChanged([this], leftCellsList[0])) {
 					this.$view.addClass("changed1");
 					this.$view.removeClass("changed2");
 				} else {
@@ -74,15 +78,14 @@ namespace JupyterNotebook {
 					this.$view.removeClass("changed2");
 				}
 			} else {
-				let ch0 = this.checkChanged([this], left[0].getCellsByMeme(this.meme));
-				let ch1 = this.checkChanged([this], left[1].getCellsByMeme(this.meme));
-				let ch01 = this.checkChanged(left[0].getCellsByMeme(this.meme),
-				                             left[1].getCellsByMeme(this.meme));
+				let ch0 = this.checkChanged([this], leftCellsList[0]);
+				let ch1 = this.checkChanged([this], leftCellsList[1]);
+				let ch01 = this.checkChanged(leftCellsList[0], leftCellsList[1]);
 				if (ch01) {
-					if (ch0 == false) {
+					if (!ch0) {
 						this.$view.removeClass("changed1");
 						this.$view.removeClass("changed2");
-					} else if (ch1 == false) {
+					} else if (!ch1) {
 						this.$view.addClass("changed1");
 						this.$view.removeClass("changed2");
 					} else {
