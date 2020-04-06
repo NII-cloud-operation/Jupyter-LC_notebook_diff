@@ -14,8 +14,17 @@ namespace JupyterNotebook {
 		/** JQueryノード */
 		$view: JQuery;
 
-		/** Cell IDから隣の関連するCellリストへの連想配列 */
-		relatedCells: { [key: string]: Cell[] };
+		/** Cell IDから左側の関連するCellリストへの連想配列 */
+		relatedLeftCells: { [key: string]: Cell[] };
+
+		/** Cell IDから右側の関連するCellリストへの連想配列 */
+		relatedRightCells: { [key: string]: Cell[] };
+
+		/** Cell IDから隣の関連するCellリストを取得する */
+		getRelatedCells(cellId: string): Cell[] {
+			return (this.relatedLeftCells[cellId] || [])
+				.concat(this.relatedRightCells[cellId] || []);
+		}
 
 		/** マッチタイプ */
 		matchType: JupyterNotebook.RelationMatchType;
@@ -26,19 +35,21 @@ namespace JupyterNotebook {
 			this.notebookLeft = notebookLeft;
 			this.notebookRight = notebookRight;
 			this.$view = $('<div class="relation"></div>');
-			this.relatedCells = {};
+			this.relatedLeftCells = {};
+			this.relatedRightCells = {};
 			this.matchType = matchType;
 		}
 
 		/** リレーション構造を更新する */
 		updateRelation(): void {
-			this.relatedCells = {};
+			this.relatedLeftCells = {};
+			this.relatedRightCells = {};
 
 			for (const cellLeft of this.notebookLeft.cellList) {
-				this.relatedCells[cellLeft.id] = [];
+				this.relatedRightCells[cellLeft.id] = [];
 			}
 			for (const cellRight of this.notebookRight.cellList) {
-				this.relatedCells[cellRight.id] = [];
+				this.relatedLeftCells[cellRight.id] = [];
 			}
 
 			if (this.matchType === RelationMatchType.Fuzzy) {
@@ -48,33 +59,33 @@ namespace JupyterNotebook {
 						.filter(cell => !usedRightCells[cell.id]);
 					if (cellRightList.length) {
 						const cellRight = cellRightList[0];
-						this.relatedCells[cellLeft.id].push(cellRight);
-						this.relatedCells[cellRight.id].push(cellLeft);
+						this.relatedRightCells[cellLeft.id].push(cellRight);
+						this.relatedLeftCells[cellRight.id].push(cellLeft);
 						usedRightCells[cellRight.id] = true;
 					}
 				}
 
-				for (const cellLeft of this.notebookLeft.cellList.filter(cell => !this.relatedCells[cell.id].length)) {
+				for (const cellLeft of this.notebookLeft.cellList.filter(cell => !this.relatedRightCells[cell.id].length)) {
 					const cellRightList = this.notebookRight.cellList
 						.filter(cell => !usedRightCells[cell.id])
 						.filter(cell => cellLeft.memeUuid === cell.memeUuid)
 						.filter(cell => cellLeft.memeBranchNumber < cell.memeBranchNumber);
 					if (cellRightList.length) {
 						const cellRight = cellRightList[0];
-						this.relatedCells[cellLeft.id].push(cellRight);
-						this.relatedCells[cellRight.id].push(cellLeft);
+						this.relatedRightCells[cellLeft.id].push(cellRight);
+						this.relatedLeftCells[cellRight.id].push(cellLeft);
 						usedRightCells[cellRight.id] = true;
 					}
 				}
 
-				for (const cellLeft of this.notebookLeft.cellList.filter(cell => !this.relatedCells[cell.id].length)) {
+				for (const cellLeft of this.notebookLeft.cellList.filter(cell => !this.relatedRightCells[cell.id].length)) {
 					const cellRightList = this.notebookRight.cellList
 						.filter(cell => !usedRightCells[cell.id])
 						.filter(cell => cellLeft.memeUuid === cell.memeUuid);
 					if (cellRightList.length) {
 						const cellRight = cellRightList[0];
-						this.relatedCells[cellLeft.id].push(cellRight);
-						this.relatedCells[cellRight.id].push(cellLeft);
+						this.relatedRightCells[cellLeft.id].push(cellRight);
+						this.relatedLeftCells[cellRight.id].push(cellLeft);
 						usedRightCells[cellRight.id] = true;
 					}
 				}
@@ -82,8 +93,8 @@ namespace JupyterNotebook {
 				for (const cellLeft of this.notebookLeft.cellList) {
 					const cellRightList = this.notebookRight.getCellsByMeme(cellLeft.meme);
 					for (const cellRight of cellRightList) {
-						this.relatedCells[cellLeft.id].push(cellRight);
-						this.relatedCells[cellRight.id].push(cellLeft);
+						this.relatedRightCells[cellLeft.id].push(cellRight);
+						this.relatedLeftCells[cellRight.id].push(cellLeft);
 					}
 				}
 			} else {
@@ -104,7 +115,7 @@ namespace JupyterNotebook {
 			html += '<div class="relation" style="height: ' + height + 'px">';
 			html += '<svg width="50" height="' + height + '">';
 			for (const cellLeft of this.notebookLeft.cellList) {
-				for (const cellRight of this.relatedCells[cellLeft.id]) {
+				for (const cellRight of this.relatedRightCells[cellLeft.id]) {
 					let y0 = cellLeft.y + offsetY;
 					let y1 = cellRight.y + offsetY;
 					html += '<path d="M 0,' + y0 + ' C 25,' + y0 + ' 25,' + y1 + ' 50,' + y1;
