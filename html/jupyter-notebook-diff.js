@@ -28,13 +28,13 @@ var JupyterNotebook;
             html += '</div>';
             return html;
         };
-        Cell.prototype.updateStyle = function (left, right) {
-            if (!this.hasMeme || left.length == 0) {
+        Cell.prototype.updateStyle = function (leftCellsList) {
+            if (!this.hasMeme || !leftCellsList.length) {
                 this.$view.removeClass("changed1");
                 this.$view.removeClass("changed2");
             }
-            else if (left.length == 1) {
-                if (this.checkChanged([this], left[0].getCellsByMeme(this.meme))) {
+            else if (leftCellsList.length == 1) {
+                if (this.checkChanged([this], leftCellsList[0])) {
                     this.$view.addClass("changed1");
                     this.$view.removeClass("changed2");
                 }
@@ -44,15 +44,15 @@ var JupyterNotebook;
                 }
             }
             else {
-                var ch0 = this.checkChanged([this], left[0].getCellsByMeme(this.meme));
-                var ch1 = this.checkChanged([this], left[1].getCellsByMeme(this.meme));
-                var ch01 = this.checkChanged(left[0].getCellsByMeme(this.meme), left[1].getCellsByMeme(this.meme));
+                var ch0 = this.checkChanged([this], leftCellsList[0]);
+                var ch1 = this.checkChanged([this], leftCellsList[1]);
+                var ch01 = this.checkChanged(leftCellsList[0], leftCellsList[1]);
                 if (ch01) {
-                    if (ch0 == false) {
+                    if (!ch0) {
                         this.$view.removeClass("changed1");
                         this.$view.removeClass("changed2");
                     }
-                    else if (ch1 == false) {
+                    else if (!ch1) {
                         this.$view.addClass("changed1");
                         this.$view.removeClass("changed2");
                     }
@@ -281,11 +281,16 @@ var JupyterNotebook;
                 }
             }
         };
+        DiffView.prototype.updateRelationsView = function () {
+            for (var _i = 0, _a = this.relations; _i < _a.length; _i++) {
+                var relation = _a[_i];
+                relation.updateView();
+            }
+        };
         DiffView.prototype.updateRelations = function () {
             for (var _i = 0, _a = this.relations; _i < _a.length; _i++) {
                 var relation = _a[_i];
                 relation.updateRelation();
-                relation.updateView();
             }
         };
         DiffView.prototype.getSourceByMeme = function (meme, notebook) {
@@ -416,6 +421,7 @@ var JupyterNotebook;
         };
         DiffView.prototype.render = function () {
             var _this = this;
+            this.updateRelations();
             var $wrapper = $('<div class="wrapper"></div>');
             this.$container.empty();
             this.$container.append($wrapper);
@@ -430,13 +436,13 @@ var JupyterNotebook;
             this.$container.on('click', '.open-button', function (e) {
                 $(e.target).parent().parent().removeClass('closed');
                 _this.resetCellY();
-                _this.updateRelations();
+                _this.updateRelationsView();
                 return false;
             });
             this.$container.on('click', '.close-button', function (e) {
                 $(e.target).parent().parent().addClass('closed');
                 _this.resetCellY();
-                _this.updateRelations();
+                _this.updateRelationsView();
                 return false;
             });
             this.$container.on('click', '.select-button', function (e) {
@@ -461,35 +467,58 @@ var JupyterNotebook;
                 _this.hideMergeView();
             });
             if (this.notebooks.length == 2) {
-                this.notebooks[0].updateStyle([], [this.notebooks[1]]);
-                this.notebooks[1].updateStyle([this.notebooks[0]], []);
+                this.updateCellsStyle(this.notebooks[1], this.relations.slice(0, 1));
             }
             else {
-                this.notebooks[0].updateStyle([], this.notebooks.slice(1));
-                this.notebooks[1].updateStyle([this.notebooks[0]], [this.notebooks[2]]);
-                this.notebooks[2].updateStyle(this.notebooks.slice(0, 2), []);
+                this.updateCellsStyle(this.notebooks[1], this.relations.slice(0, 1));
+                this.updateCellsStyle(this.notebooks[2], this.relations.slice(0, 2));
             }
             setInterval(function () {
-                _this.updateRelations();
+                _this.updateRelationsView();
             });
+        };
+        DiffView.prototype.updateCellsStyle = function (notebook, relations) {
+            relations.reverse();
+            for (var _i = 0, _a = notebook.cellList; _i < _a.length; _i++) {
+                var cell = _a[_i];
+                var leftCellsList = [];
+                var rightCells = [cell];
+                for (var _b = 0, relations_1 = relations; _b < relations_1.length; _b++) {
+                    var relation = relations_1[_b];
+                    var leftCells = [];
+                    for (var _c = 0, rightCells_1 = rightCells; _c < rightCells_1.length; _c++) {
+                        var rightCell = rightCells_1[_c];
+                        for (var _d = 0, _e = relation.relatedLeftCells[rightCell.id] || []; _d < _e.length; _d++) {
+                            var leftCell = _e[_d];
+                            leftCells.push(leftCell);
+                        }
+                    }
+                    leftCellsList.push(leftCells);
+                    rightCells = leftCells;
+                }
+                cell.updateStyle(leftCellsList.reverse());
+            }
         };
         DiffView.prototype.getRelatedCellsById = function (cellId) {
             var queue = [cellId];
-            var related = {};
+            var related = [];
+            var used = {};
+            used[cellId] = true;
             while (queue.length) {
                 var current = queue.shift();
                 for (var _i = 0, _a = this.relations; _i < _a.length; _i++) {
                     var relation = _a[_i];
-                    for (var _b = 0, _c = relation.relatedCells[current] || []; _b < _c.length; _b++) {
+                    for (var _b = 0, _c = relation.getRelatedCells(current); _b < _c.length; _b++) {
                         var cell = _c[_b];
-                        if (!related[cell.id]) {
-                            related[cell.id] = cell;
+                        if (!used[cell.id]) {
+                            used[cell.id] = true;
+                            related.push(cell);
                             queue.push(cell.id);
                         }
                     }
                 }
             }
-            return Object.keys(related).map(function (id) { return related[id]; });
+            return related;
         };
         return DiffView;
     }());
@@ -524,12 +553,6 @@ var JupyterNotebook;
             html += '<div class="title">' + this.filename + '</div>';
             html += '</div>';
             return html;
-        };
-        Notebook.prototype.updateStyle = function (left, right) {
-            for (var _i = 0, _a = this.cellList; _i < _a.length; _i++) {
-                var cell = _a[_i];
-                cell.updateStyle(left, right);
-            }
         };
         Notebook.prototype.getCellsByMeme = function (meme) {
             var cells = this.cellMap[meme];
@@ -602,19 +625,25 @@ var JupyterNotebook;
             this.notebookLeft = notebookLeft;
             this.notebookRight = notebookRight;
             this.$view = $('<div class="relation"></div>');
-            this.relatedCells = {};
+            this.relatedLeftCells = {};
+            this.relatedRightCells = {};
             this.matchType = matchType;
         }
+        Relation.prototype.getRelatedCells = function (cellId) {
+            return (this.relatedLeftCells[cellId] || [])
+                .concat(this.relatedRightCells[cellId] || []);
+        };
         Relation.prototype.updateRelation = function () {
             var _this = this;
-            this.relatedCells = {};
+            this.relatedLeftCells = {};
+            this.relatedRightCells = {};
             for (var _i = 0, _a = this.notebookLeft.cellList; _i < _a.length; _i++) {
                 var cellLeft = _a[_i];
-                this.relatedCells[cellLeft.id] = [];
+                this.relatedRightCells[cellLeft.id] = [];
             }
             for (var _b = 0, _c = this.notebookRight.cellList; _b < _c.length; _b++) {
                 var cellRight = _c[_b];
-                this.relatedCells[cellRight.id] = [];
+                this.relatedLeftCells[cellRight.id] = [];
             }
             if (this.matchType === RelationMatchType.Fuzzy) {
                 var usedRightCells_1 = {};
@@ -624,8 +653,8 @@ var JupyterNotebook;
                         .filter(function (cell) { return !usedRightCells_1[cell.id]; });
                     if (cellRightList.length) {
                         var cellRight = cellRightList[0];
-                        this.relatedCells[cellLeft.id].push(cellRight);
-                        this.relatedCells[cellRight.id].push(cellLeft);
+                        this.relatedRightCells[cellLeft.id].push(cellRight);
+                        this.relatedLeftCells[cellRight.id].push(cellLeft);
                         usedRightCells_1[cellRight.id] = true;
                     }
                 }
@@ -636,13 +665,13 @@ var JupyterNotebook;
                         .filter(function (cell) { return cellLeft.memeBranchNumber < cell.memeBranchNumber; });
                     if (cellRightList.length) {
                         var cellRight = cellRightList[0];
-                        this_1.relatedCells[cellLeft.id].push(cellRight);
-                        this_1.relatedCells[cellRight.id].push(cellLeft);
+                        this_1.relatedRightCells[cellLeft.id].push(cellRight);
+                        this_1.relatedLeftCells[cellRight.id].push(cellLeft);
                         usedRightCells_1[cellRight.id] = true;
                     }
                 };
                 var this_1 = this;
-                for (var _f = 0, _g = this.notebookLeft.cellList.filter(function (cell) { return !_this.relatedCells[cell.id].length; }); _f < _g.length; _f++) {
+                for (var _f = 0, _g = this.notebookLeft.cellList.filter(function (cell) { return !_this.relatedRightCells[cell.id].length; }); _f < _g.length; _f++) {
                     var cellLeft = _g[_f];
                     _loop_2(cellLeft);
                 }
@@ -652,13 +681,13 @@ var JupyterNotebook;
                         .filter(function (cell) { return cellLeft.memeUuid === cell.memeUuid; });
                     if (cellRightList.length) {
                         var cellRight = cellRightList[0];
-                        this_2.relatedCells[cellLeft.id].push(cellRight);
-                        this_2.relatedCells[cellRight.id].push(cellLeft);
+                        this_2.relatedRightCells[cellLeft.id].push(cellRight);
+                        this_2.relatedLeftCells[cellRight.id].push(cellLeft);
                         usedRightCells_1[cellRight.id] = true;
                     }
                 };
                 var this_2 = this;
-                for (var _h = 0, _j = this.notebookLeft.cellList.filter(function (cell) { return !_this.relatedCells[cell.id].length; }); _h < _j.length; _h++) {
+                for (var _h = 0, _j = this.notebookLeft.cellList.filter(function (cell) { return !_this.relatedRightCells[cell.id].length; }); _h < _j.length; _h++) {
                     var cellLeft = _j[_h];
                     _loop_3(cellLeft);
                 }
@@ -669,8 +698,8 @@ var JupyterNotebook;
                     var cellRightList = this.notebookRight.getCellsByMeme(cellLeft.meme);
                     for (var _m = 0, cellRightList_1 = cellRightList; _m < cellRightList_1.length; _m++) {
                         var cellRight = cellRightList_1[_m];
-                        this.relatedCells[cellLeft.id].push(cellRight);
-                        this.relatedCells[cellRight.id].push(cellLeft);
+                        this.relatedRightCells[cellLeft.id].push(cellRight);
+                        this.relatedLeftCells[cellRight.id].push(cellLeft);
                     }
                 }
             }
@@ -689,7 +718,7 @@ var JupyterNotebook;
             html += '<svg width="50" height="' + height + '">';
             for (var _i = 0, _a = this.notebookLeft.cellList; _i < _a.length; _i++) {
                 var cellLeft = _a[_i];
-                for (var _b = 0, _c = this.relatedCells[cellLeft.id]; _b < _c.length; _b++) {
+                for (var _b = 0, _c = this.relatedRightCells[cellLeft.id]; _b < _c.length; _b++) {
                     var cellRight = _c[_b];
                     var y0 = cellLeft.y + offsetY;
                     var y1 = cellRight.y + offsetY;
