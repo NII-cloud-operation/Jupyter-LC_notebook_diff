@@ -28,7 +28,7 @@ setup_args = dict (name='lc-notebook-diff',
       packages=['lc_notebook_diff'],
       package_dir={'lc_notebook_diff': 'nbextension/lc_notebook_diff'},
       include_package_data=True,
-      platforms=['Jupyter Notebook 4.2.x', 'Jupyter Notebook 5.x'],
+      platforms=['Jupyter Notebook 4.2.x', 'Jupyter Notebook 5.x', 'Jupyter Notebook 6.x'],
       zip_safe=False,
       install_requires=[
           'notebook>=4.2.0',

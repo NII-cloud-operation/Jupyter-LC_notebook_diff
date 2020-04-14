@@ -1,3 +1,6 @@
+pip --no-cache-dir install jupyter_nbextensions_configurator
+jupyter nbextensions_configurator enable --sys-prefix
+
 jupyter nbextension install --py lc_notebook_diff --sys-prefix
 jupyter nbextension enable --py lc_notebook_diff --sys-prefix
 

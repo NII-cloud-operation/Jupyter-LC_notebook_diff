@@ -1,0 +1,6 @@
+Type: Jupyter Notebook Extension
+Name: LC notebook diff
+Section: tree
+Description: "Diff Extension for Notebooks"
+Main: main.js
+Compatibility: 4.2.x 5.x 6.x
