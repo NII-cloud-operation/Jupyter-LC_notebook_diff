@@ -20,7 +20,7 @@ for ext in ['.css', '.js']:
                 os.path.join(BASE, 'lc_notebook_diff', 'nbextension'))
 
 with open(os.path.join(BASE, 'lc_notebook_diff', 'nbextension', 'diff_match_patch.js'), 'wb') as f:
-    f.write(urlopen('https://cdnjs.cloudflare.com/ajax/libs/diff_match_patch/20121119/diff_match_patch.js').read())
+    f.write(urlopen('https://github.com/google/diff-match-patch/raw/master/javascript/diff_match_patch.js').read())
 
 setup_args = dict (name='lc-notebook-diff',
       version=VERSION_NS['__version__'],

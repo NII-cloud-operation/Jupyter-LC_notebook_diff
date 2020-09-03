@@ -1,5 +1,6 @@
 .DS_Store
 nbextension/lc_notebook_diff/nbextension/jupyter-notebook-diff.*
+nbextension/lc_notebook_diff/nbextension/diff_match_patch.js
 build
 dist
 *.egg-info
