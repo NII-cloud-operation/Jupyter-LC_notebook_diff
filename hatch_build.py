@@ -22,6 +22,6 @@ class CustomHook(BuildHookInterface):
 
     def initialize(self, version, build_data):
         """Initialize the hook."""
-        if self.target_name not in ["wheel", "sdist"]:
+        if self.target_name not in ["sdist"]:
             return
         build_nbextension()
