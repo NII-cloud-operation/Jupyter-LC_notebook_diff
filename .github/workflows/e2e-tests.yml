@@ -72,6 +72,7 @@ jobs:
           E2E_DEFAULT_DELAY: '200'
           JUPYTERLAB_URL: 'http://localhost:8888/lab?token=test-token'
           NOTEBOOK7_URL: 'http://localhost:8888/tree?token=test-token'
+          NBCLASSIC_URL: 'http://localhost:8888/nbclassic/tree?token=test-token'
           JUPYTER_WORK_DIR: ${{ github.workspace }}/ui-tests/e2e-notebook/artifacts/jupyter-work
         run: |
           set -euxo pipefail

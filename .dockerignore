@@ -1,6 +1,14 @@
 lib/
 node_modules/
+components/lib/
+components/node_modules/
+nbextension/lib/
+nbextension/node_modules/
+nbextension/diff_match_patch.js
 lc_notebook_diff/labextension/
+lc_notebook_diff/nbextension/diff_match_patch.js
+lc_notebook_diff/nbextension/jupyter-notebook-diff.js
+lc_notebook_diff/nbextension/jupyter-notebook-diff.js.map
 *.tsbuildinfo
 ui-tests/test-results/
 ui-tests/playwright-report/

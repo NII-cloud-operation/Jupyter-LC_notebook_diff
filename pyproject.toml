@@ -47,6 +47,7 @@ exclude = [".github", "binder"]
 [tool.hatch.build.targets.wheel.shared-data]
 "lc_notebook_diff/labextension" = "share/jupyter/labextensions/lc_notebook_diff"
 "install.json" = "share/jupyter/labextensions/lc_notebook_diff/install.json"
+"lc_notebook_diff/nbextension" = "share/jupyter/nbextensions/notebook_diff"
 
 [tool.hatch.build.hooks.version]
 path = "lc_notebook_diff/_version.py"

@@ -15,7 +15,9 @@ ENV PATH=/.npm/bin/:${PATH}
 RUN pip install --no-cache  jupyter_nbextensions_configurator
 
 COPY . /tmp/notebook_diff
-RUN pip install --no-cache /tmp/notebook_diff
+RUN cd /tmp/notebook_diff/components && npm install && npm run build && \
+    cd /tmp/notebook_diff/nbextension && npm install && npm run build && \
+    pip install --no-cache /tmp/notebook_diff
 
 RUN jupyter labextension enable lc_notebook_diff
 

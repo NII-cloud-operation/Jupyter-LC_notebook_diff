@@ -88,6 +88,10 @@ def main() -> int:
             if notebook7_url:
                 parameters["notebook7_url"] = notebook7_url
 
+            nbclassic_url = os.getenv("NBCLASSIC_URL")
+            if nbclassic_url:
+                parameters["nbclassic_url"] = nbclassic_url
+
             jupyter_work_dir = os.getenv("JUPYTER_WORK_DIR")
             if jupyter_work_dir:
                 parameters["jupyter_work_dir"] = jupyter_work_dir
