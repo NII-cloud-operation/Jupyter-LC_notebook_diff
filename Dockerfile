@@ -1,11 +1,24 @@
-FROM jupyter/scipy-notebook:latest
+FROM quay.io/jupyter/scipy-notebook:notebook-7.4.7
 
 USER root
 
-### extensions for jupyter
+# Install Node.js 20.x (required for Etherpad build)
+RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
+    apt-get install -y nodejs && \
+    apt-get clean && \
+    mkdir -p /.npm && \
+    chown jovyan:users -R /.npm && \
+    rm -rf /var/lib/apt/lists/*
+ENV NPM_CONFIG_PREFIX=/.npm
+ENV PATH=/.npm/bin/:${PATH}
+
+RUN pip install --no-cache  jupyter_nbextensions_configurator
+
 COPY . /tmp/notebook_diff
-RUN pip --no-cache-dir install jupyter_nbextensions_configurator \
-    /tmp/notebook_diff
+RUN cd /tmp/notebook_diff/components && npm install && npm run build && \
+    cd /tmp/notebook_diff/nbextension && npm install && npm run build && \
+    pip install --no-cache /tmp/notebook_diff
+
 RUN jupyter labextension enable lc_notebook_diff
 
 RUN jupyter nbclassic-extension install --py jupyter_nbextensions_configurator --sys-prefix && \

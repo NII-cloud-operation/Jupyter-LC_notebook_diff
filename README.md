@@ -9,17 +9,17 @@ Jupyter-LC\_notebook\_diff is an extension that compares two or three Jupyter no
 
 ## Install
 
-To install the extension, execute:
+To install the extension, download the tar.gz file from the [latest release](https://github.com/NII-cloud-operation/Jupyter-LC_notebook_diff/releases) and execute:
 
 ```bash
-$ pip install git+https://github.com/NII-cloud-operation/Jupyter-LC_notebook_diff.git
+$ pip install lc_notebook_diff-*.tar.gz
 ```
 
-To use the extension you will also need to install and enable, you can use Jupyter subcommand:
+For nbclassic users, you will also need to install and enable the extension:
 
-```
-$ jupyter nbclassic-extension install --py lc_notebook_diff
-$ jupyter nbclassic-extension enable --py lc_notebook_diff
+```bash
+$ jupyter nbclassic-extension install --py lc_notebook_diff --sys-prefix
+$ jupyter nbclassic-extension enable --py lc_notebook_diff --sys-prefix
 ```
 
 then restart Jupyter notebook.
