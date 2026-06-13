@@ -13,7 +13,7 @@
     "lc_notebook_diff_components": "file:../components"
   },
   "devDependencies": {
-    "esbuild": "^0.19.11",
+    "esbuild": "^0.28.1",
     "typescript": "^5.3.3"
   }
 }
